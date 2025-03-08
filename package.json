@@ -7,7 +7,7 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx --watch --env-file .env src/index.ts",
     "start": "node --env-file .env dist/src/index.js",
-    "lint": "prettier --check .",
+    "lint": "eslint",
     "check-types": "tsc -p tsconfig.json --noEmit",
     "check-format": "prettier --ignore-path .gitignore --check **/*.{js,jsx,ts,tsx,json,css}",
     "check-all": "yarn check-format && yarn check-types && yarn lint && yarn test",
