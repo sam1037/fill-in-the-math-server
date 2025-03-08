@@ -1,9 +1,6 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-echo 'Formatting code'
-yarn format
-
 echo 'Running test case'
 yarn test
 
