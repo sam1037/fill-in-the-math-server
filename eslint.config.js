@@ -19,5 +19,12 @@ export default tseslint.config(
       },
     },
   },
-  perfectionist.configs['recommended-natural']
+  perfectionist.configs['recommended-natural'],
+  {
+    rules: {
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+    },
+  }
 );
