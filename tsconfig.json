@@ -1,0 +1,9 @@
+{
+  "extends": "@tsconfig/node20/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./"
+  },
+  "include": ["**/*.ts", "jest.config.js"],
+  "exclude": ["dist"]
+}

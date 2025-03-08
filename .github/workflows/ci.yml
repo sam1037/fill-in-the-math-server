@@ -1,0 +1,38 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.17.0
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Run ESLint
+        run: yarn lint
+
+      - name: Run Prettier
+        run: yarn prettier --ignore-path .gitignore --check "./**/*.{js,jsx,ts,tsx,json,css}"
+
+      - name: Check for TypeScript errors
+        run: yarn tsc --noEmit
+
+      - name: Run tests
+        run: yarn test
