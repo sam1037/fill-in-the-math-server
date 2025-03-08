@@ -48,7 +48,8 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "yarn check-all"
+      "prettier --write",
+      "eslint"
     ]
   }
 }
