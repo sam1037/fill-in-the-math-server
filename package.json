@@ -20,8 +20,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@socket.io/admin-ui": "^0.5.1",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "socket.io": "^4.8.1",
+    "socketio": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.26.9",
@@ -44,11 +48,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint",
-      "prettier --check"
-    ],
-    "*.{json,yml,yaml,md}": [
-      "prettier --check"
+      "yarn check-all"
     ]
   }
 }
