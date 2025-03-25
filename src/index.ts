@@ -1,4 +1,4 @@
-// src/index.js
+// Entry point for the Fill-in-the-Math game server
 
 import { instrument } from '@socket.io/admin-ui';
 import cors from 'cors';
@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import express, { Express, Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { setupSocketHandlers } from './socket/socket-handlers.js';
 
 dotenv.config();
 
@@ -28,23 +29,26 @@ const io = new Server(httpServer, {
   },
 });
 
-io.on('connection', (socket) => {
-  console.log(`Server: user connected: ${socket.id}`);
-});
+// Setup socket handlers
+setupSocketHandlers(io);
 
+// Setup Socket.IO Admin UI
 instrument(io, {
   auth: false,
   mode: 'development',
 });
 
+// API routes
 app.get('/', (req: Request, res: Response) => {
-  res.send('SunnyQ Socket.io Express + TypeScript Server');
+  res.send('Fill-in-the-Math Game Server');
 });
 
+// CORS setup for HTTP server
 httpServer.prependListener('request', (req: Request, res: Response) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
 });
 
+// Start the server
 httpServer
   .once('error', (err) => {
     console.error(err);
