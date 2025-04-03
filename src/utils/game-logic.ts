@@ -91,7 +91,17 @@ export const endGame = (roomId: string, io: Server) => {
     entry.rank = index + 1;
   });
 
-  const winner = leaderboard.length > 0 ? leaderboard[0].playerId : '';
+  // Check for tied scores - if all players have the same score, there's no winner
+  let winner = '';
+  if (leaderboard.length > 0) {
+    const topScore = leaderboard[0].score;
+    const allTied = leaderboard.every((entry) => entry.score === topScore);
+
+    // Only set a winner if not everyone is tied
+    if (!allTied) {
+      winner = leaderboard[0].playerId;
+    }
+  }
 
   // Update room status
   room.status = RoomStatus.FINISHED;
