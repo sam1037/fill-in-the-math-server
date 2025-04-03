@@ -9,10 +9,11 @@ import {
 import { ActionType, Player, RoomStatus } from '../../types/game.types.js';
 import {
   broadcastRoomUpdate,
-  startPlayerTimer,
+  startRoomTimer, // Changed from startPlayerTimer
   sendQuestionToPlayer,
   applyWrongAnswerPenalty,
   endGame,
+  sendHealthUpdates,
 } from '../../utils/game-logic.js';
 import { rooms, playerRooms, playerTimers } from '../../state/game-state.js';
 
@@ -50,21 +51,20 @@ export const setupGameHandlers = (io: Server, socket: Socket) => {
 
     room.status = RoomStatus.IN_PROGRESS;
 
+    // Use the helper function to send health updates
+    sendHealthUpdates(data.roomId, io);
+
+    // Start a single room timer for all players
+    startRoomTimer(data.roomId, io);
+
+    // Broadcast updated room state to all
+    broadcastRoomUpdate(data.roomId, io);
+
     // Notify all players
     io.to(data.roomId).emit(GameEvents.GAME_STARTED, {
       timestamp: Date.now(),
       room,
     });
-
-    // Start timers for all players
-    room.players.forEach((player: Player) => {
-      startPlayerTimer(player.id, data.roomId, io);
-      // Auto-send first question to each player
-      sendQuestionToPlayer(player.id, data.roomId, io);
-    });
-
-    // Broadcast updated room state to all
-    broadcastRoomUpdate(data.roomId, io);
   });
 
   socket.on(GameEvents.GET_QUESTION, (data: GetQuestionRequest) => {
@@ -187,20 +187,8 @@ export const setupGameHandlers = (io: Server, socket: Socket) => {
       },
     });
 
-    // Broadcast health updates to all players
-    if (actionType === ActionType.ATTACK) {
-      io.to(roomId).emit(GameEvents.HEALTH_UPDATED, {
-        timestamp: Date.now(),
-        playerId: data.targetPlayerId,
-        newHealth: targetPlayer.health,
-      });
-    } else {
-      io.to(roomId).emit(GameEvents.HEALTH_UPDATED, {
-        timestamp: Date.now(),
-        playerId: socket.id,
-        newHealth: player.health,
-      });
-    }
+    // Use the helper function to send health updates
+    sendHealthUpdates(roomId, io);
 
     // Broadcast updated room state to all players
     broadcastRoomUpdate(roomId, io);
