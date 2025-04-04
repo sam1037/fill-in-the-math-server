@@ -15,6 +15,8 @@ import {
   endGame,
   sendHealthUpdates,
 } from '../../utils/game-logic.js';
+
+import { isArraysEqual } from '../../utils/utils.js';
 import { rooms, playerRooms, playerTimers } from '../../state/game-state.js';
 
 export const setupGameHandlers = (io: Server, socket: Socket) => {
@@ -90,7 +92,7 @@ export const setupGameHandlers = (io: Server, socket: Socket) => {
     }
 
     // Validate against the stored question
-    const isCorrect = data.answer === player.currentQuestion.answer;
+    const isCorrect = isArraysEqual(data.answer, player.currentQuestion.answer);
 
     if (isCorrect) {
       player.score += 10;
