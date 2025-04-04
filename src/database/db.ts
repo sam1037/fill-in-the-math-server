@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+import pg from 'pg';
+const { Pool } = pg;
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -31,6 +32,7 @@ pool.on('error', (err) => {
 });
 
 // Query function to execute SQL queries
+// TODO check security of this function, SQL injection?
 export const query = (text: string, params?: unknown[]) => {
   return pool.query(text, params);
 };
