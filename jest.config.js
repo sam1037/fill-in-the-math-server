@@ -192,6 +192,26 @@ const config = {
 
   // Whether to use watchman for file crawling
   // watchman: true,
+
+  // Add these configurations for ESM support
+  preset: 'ts-jest/presets/default-esm', // Use the ESM preset
+  testEnvironment: 'node',
+  extensionsToTreatAsEsm: ['.ts'], // Treat .ts files as ESM
+
+  // This helps Jest resolve the .js extensions in import statements
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
+
+  // Configure TypeScript transformation with ESM support
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        useESM: true,
+      },
+    ],
+  },
 };
 
 export default config;
