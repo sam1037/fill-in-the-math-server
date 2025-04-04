@@ -1,9 +1,14 @@
 import pool from '../../src/database/db.js';
 import { seedUsers } from '../../src/database/seed.js';
+import { resetDatabase } from '../../src/database/setup.js';
 
 describe('Database Seeding', () => {
   // Clean up data before and after tests
   beforeAll(async () => {
+    await resetDatabase();
+  });
+
+  beforeEach(async () => {
     await pool.query('TRUNCATE users RESTART IDENTITY CASCADE');
   });
 
