@@ -1,4 +1,4 @@
-import pool from '../src/database/db.js';
+import pool from '../../src/database/db.js';
 
 describe('PostgreSQL Connection', () => {
   // Close the pool after all tests complete
