@@ -157,20 +157,34 @@ export function generateQuestion(difficulty: QuestionDifficulty): Question {
       allPositions.splice(chosenIndex, 1);
     }
   }
+
+  // Storing Game answer
   const answer = [];
   let currentAnswer;
 
-  // Create blanks with positions and values
+  // Create blanks with positions and values & Update Game answer
   for (const position of selectedBlankPositions) {
     currentAnswer = equation_arr[position];
     equation_arr[position] = MathSymbol.Blank;
     answer.push(currentAnswer);
   }
+  const text = generate_text_from_question(equation_arr);
 
   return {
     id,
     equation_arr,
+    text,
     answer,
     difficulty,
   };
+}
+
+function generate_text_from_question(equation_arr: (number | MathSymbol)[]) {
+  let text = '';
+  for (const component of equation_arr) {
+    text += component.toString();
+    // for number, convert to string
+    // for mathsymbol -> implicityly a string type
+  }
+  return text;
 }
