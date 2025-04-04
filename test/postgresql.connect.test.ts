@@ -1,11 +1,11 @@
-import pool from '../database/db.js';
+import pool from '../src/database/db.js';
 
 describe('PostgreSQL Connection', () => {
   // Close the pool after all tests complete
   afterAll(async () => {
     await pool.end();
     console.log('Database connection closed.');
-  }, 10000); // 10 seconds timeout
+  });
 
   it('should connect to the database and execute a query', async () => {
     try {
