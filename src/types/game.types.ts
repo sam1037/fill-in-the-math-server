@@ -38,14 +38,14 @@ export interface Player {
 // Question related interfaces
 export interface Question {
   id: string;
-  equation_arr: (number | MathSymbol)[];
-  answer: (number | MathSymbol)[];
+  text: string;
+  answer: number;
   difficulty: QuestionDifficulty;
 }
 
 export interface PlayerAnswer extends BaseSocketMessage {
   questionId: string;
-  answer: number[];
+  answer: number;
   isCorrect: boolean;
   timeSpent: number;
 }
@@ -59,24 +59,6 @@ export interface PlayerAction extends BaseSocketMessage {
 }
 
 // Enums
-// Game Generation related
-/**
- * Enumeration representing mathematical operation symbols and a blank placeholder.
- * @enum {string}
- */
-export enum MathSymbol {
-  Addition = '+',
-  Subtraction = '-',
-  Multiplication = '*',
-  Division = '/',
-  Equals = '=',
-  Blank = '?',
-}
-
-/**
- * Enum representing difficulty levels for the game.
- * @enum {string}
- */
 export enum QuestionDifficulty {
   EASY = 'easy',
   MEDIUM = 'medium',
