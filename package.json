@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "prepare": "husky",
     "test": "jest",
+    "test-in-band": "jest --runInBand",
     "db:setup": "npx tsx src/database/setup.ts",
     "db:seed": "npx tsx src/database/seed.ts"
   },
