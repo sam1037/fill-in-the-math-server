@@ -14,7 +14,7 @@ import { randint, isNumber } from './utils.js';
  * generate math question randomly given difficulty
  *
  * @param difficulty - string in [easy, medium, hard]
- * @returns {Array}, Array of numbers and math symbols, e.g. [1, MathSymbol.Addition, MathSymbol.Blank, MathSymbol.Equals, 3]
+ * @returns {Question} - Question object with equation array, difficulty, and expected answer
  *
  * Details:
  * Easy: only addition and subtraction, only single digit numbers, 1 blank
@@ -132,6 +132,7 @@ export function generateQuestion(difficulty: QuestionDifficulty): Question {
 
   // Create blanks array with positions and values
   const allPositions = [];
+  const answer: number[] = [];
 
   // Collect all possible positions for blanks (each single digit in the equation)
   let pos = 0;
@@ -154,37 +155,17 @@ export function generateQuestion(difficulty: QuestionDifficulty): Question {
       const chosenIndex = randint(allPositions.length - 1);
       const position_index = allPositions[chosenIndex];
       selectedBlankPositions.push(position_index);
+      // Store the answer value (the number that will be replaced with a blank)
+      answer.push(equation_arr[position_index] as number);
+      // Replace the number with a blank in the equation
+      equation_arr[position_index] = MathSymbol.Blank;
       allPositions.splice(chosenIndex, 1);
     }
   }
 
-  // Storing Game answer
-  const answer = [];
-  let currentAnswer;
-
-  // Create blanks with positions and values & Update Game answer
-  for (const position of selectedBlankPositions) {
-    currentAnswer = equation_arr[position];
-    equation_arr[position] = MathSymbol.Blank;
-    answer.push(currentAnswer);
-  }
-  const text = generate_text_from_question(equation_arr);
-
   return {
     id,
     equation_arr,
-    text,
-    answer,
     difficulty,
   };
-}
-
-function generate_text_from_question(equation_arr: (number | MathSymbol)[]) {
-  let text = '';
-  for (const component of equation_arr) {
-    text += component.toString();
-    // for number, convert to string
-    // for mathsymbol -> implicityly a string type
-  }
-  return text;
 }
