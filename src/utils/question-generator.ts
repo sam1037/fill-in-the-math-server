@@ -10,6 +10,63 @@ import {
 } from '../types/game.dictionary.js';
 import { randint, isNumber } from './utils.js';
 
+function calculate_result(numbers: number[], selectedOperators: MathSymbol[]) {
+  // Calculate the result on right hand side
+  let result = numbers[0];
+  for (let i = 0; i < selectedOperators.length; i++) {
+    const op = selectedOperators[i];
+    const num = numbers[i + 1];
+
+    switch (op) {
+      case MathSymbol.Addition:
+        result += num;
+        break;
+      case MathSymbol.Subtraction:
+        result -= num;
+        break;
+      case MathSymbol.Multiplication:
+        result *= num;
+        break;
+      case MathSymbol.Division:
+        result /= num;
+        break;
+    }
+  }
+  return result;
+}
+
+function generate_number(
+  selectedOperators: MathSymbol[],
+  numOperations: number
+) {
+  // Generate numbers to use in the equation
+  const numbers: number[] = [];
+
+  for (let i = 0; i < numOperations + 1; i++) {
+    // Ensure division operations result in whole numbers
+    if (i > 0 && selectedOperators[i - 1] === MathSymbol.Division) {
+      // Find divisors of the previous number
+      const divisors = [];
+      for (let j = 1; j <= 9; j++) {
+        if (numbers[i - 1] % j === 0) {
+          divisors.push(j);
+        }
+      }
+      if (divisors.length > 0) {
+        const randomDivisor =
+          divisors[Math.floor(Math.random() * divisors.length)];
+        numbers.push(randomDivisor);
+      } else {
+        // If no proper divisors, change the operation
+        selectedOperators[i - 1] = MathSymbol.Addition;
+        numbers.push(Math.floor(Math.random() * 9) + 1);
+      }
+    } else {
+      numbers.push(Math.floor(Math.random() * 9) + 1);
+    }
+  }
+  return numbers;
+}
 /**
  * generate math question randomly given difficulty
  *
@@ -62,52 +119,14 @@ export function generateQuestion(difficulty: QuestionDifficulty): Question {
     selectedOperators.includes(MathSymbol.Division);
 
   // Generate numbers to use in the equation
-  const numbers: number[] = [];
-
-  for (let i = 0; i < numOperations + 1; i++) {
-    // Ensure division operations result in whole numbers
-    if (i > 0 && selectedOperators[i - 1] === MathSymbol.Division) {
-      // Find divisors of the previous number
-      const divisors = [];
-      for (let j = 1; j <= 9; j++) {
-        if (numbers[i - 1] % j === 0) {
-          divisors.push(j);
-        }
-      }
-      if (divisors.length > 0) {
-        const randomDivisor =
-          divisors[Math.floor(Math.random() * divisors.length)];
-        numbers.push(randomDivisor);
-      } else {
-        // If no proper divisors, change the operation
-        selectedOperators[i - 1] = MathSymbol.Addition;
-        numbers.push(Math.floor(Math.random() * 9) + 1);
-      }
-    } else {
-      numbers.push(Math.floor(Math.random() * 9) + 1);
-    }
-  }
+  let numbers: number[] = generate_number(selectedOperators, numOperations);
 
   // Calculate the result on right hand side
-  let result = numbers[0];
-  for (let i = 0; i < selectedOperators.length; i++) {
-    const op = selectedOperators[i];
-    const num = numbers[i + 1];
+  let result = calculate_result(numbers, selectedOperators);
 
-    switch (op) {
-      case MathSymbol.Addition:
-        result += num;
-        break;
-      case MathSymbol.Subtraction:
-        result -= num;
-        break;
-      case MathSymbol.Multiplication:
-        result *= num;
-        break;
-      case MathSymbol.Division:
-        result /= num;
-        break;
-    }
+  while (!Number.isInteger(result)) {
+    numbers = generate_number(selectedOperators, numOperations);
+    result = calculate_result(numbers, selectedOperators);
   }
   // Create the equation array
   const equation_arr: (number | MathSymbol)[] = [numbers[0]];
