@@ -41,39 +41,30 @@ function generate_number(
 ) {
   // Generate numbers to use in the equation
   const numbers: number[] = [];
-  const used_numbers: number[] = [];
 
   for (let i = 0; i < numOperations + 1; i++) {
     // Ensure division operations result in whole numbers
-    let current_number = -1;
-    while (current_number in used_numbers) {
-      // if current number is in used_number, rerun the search process
-      // disallow duplicated numbers
-      if (i > 0 && selectedOperators[i - 1] === MathSymbol.Division) {
-        // Find divisors of the previous number
-        const divisors = [];
-        for (let j = 1; j <= 9; j++) {
-          if (numbers[i - 1] % j === 0) {
-            divisors.push(j);
-          }
+    if (i > 0 && selectedOperators[i - 1] === MathSymbol.Division) {
+      // Find divisors of the previous number
+      const divisors = [];
+      for (let j = 1; j <= 9; j++) {
+        if (numbers[i - 1] % j === 0) {
+          divisors.push(j);
         }
-        if (divisors.length > 0) {
-          const randomDivisor =
-            divisors[Math.floor(Math.random() * divisors.length)];
-          current_number = randomDivisor;
-        } else {
-          // If no proper divisors, change the operation
-          selectedOperators[i - 1] = MathSymbol.Addition;
-          current_number = randint(1, 9);
-        }
-      } else {
-        current_number = randint(1, 9);
       }
+      if (divisors.length > 0) {
+        const randomDivisor =
+          divisors[Math.floor(Math.random() * divisors.length)];
+        numbers.push(randomDivisor);
+      } else {
+        // If no proper divisors, change the operation
+        selectedOperators[i - 1] = MathSymbol.Addition;
+        numbers.push(Math.floor(Math.random() * 9) + 1);
+      }
+    } else {
+      numbers.push(Math.floor(Math.random() * 9) + 1);
     }
-    numbers.push(current_number);
-    used_numbers.push(current_number);
   }
-
   return numbers;
 }
 /**
