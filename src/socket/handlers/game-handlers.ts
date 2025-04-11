@@ -15,6 +15,8 @@ import {
   endGame,
   sendHealthUpdates,
 } from '../../utils/game-logic.js';
+
+import { checkAnswer } from '../../utils/check-answer.js';
 import { rooms, playerRooms, playerTimers } from '../../state/game-state.js';
 
 export const setupGameHandlers = (io: Server, socket: Socket) => {
@@ -89,8 +91,11 @@ export const setupGameHandlers = (io: Server, socket: Socket) => {
       });
     }
 
-    // Validate against the stored question
-    const isCorrect = data.answer === player.currentQuestion.answer;
+    // Validate the answer using our check-answer function
+    const isCorrect = checkAnswer(
+      player.currentQuestion.equation_arr,
+      data.answer
+    );
 
     if (isCorrect) {
       player.score += 10;
@@ -109,7 +114,6 @@ export const setupGameHandlers = (io: Server, socket: Socket) => {
     socket.emit(GameEvents.ANSWER_RESULT, {
       timestamp: Date.now(),
       correct: isCorrect,
-      correctAnswer: player.currentQuestion.answer,
       canPerformAction: isCorrect,
     });
 

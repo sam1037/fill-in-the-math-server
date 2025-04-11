@@ -16,7 +16,7 @@ export interface GetQuestionRequest extends BaseSocketMessage {
 export interface SubmitAnswerRequest extends BaseSocketMessage {
   roomId: string;
   questionId: string;
-  answer: number;
+  answer: number[];
 }
 
 export interface PerformActionRequest extends BaseSocketMessage {
@@ -32,7 +32,7 @@ export interface QuestionResponse extends BaseSocketMessage {
 
 export interface AnswerResultResponse extends BaseSocketMessage {
   correct: boolean;
-  correctAnswer?: number;
+  correctAnswer?: number[];
   canPerformAction: boolean;
 }
 
