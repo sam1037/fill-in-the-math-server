@@ -4,6 +4,7 @@ import {
   CreateRoomRequest,
   JoinRoomRequest,
   LeaveRoomRequest,
+  QuickJoinRequest,
   UpdateSettingsRequest,
 } from '../../events/room.events.js';
 import { broadcastRoomUpdate } from '../../utils/game-logic.js';
@@ -11,6 +12,7 @@ import {
   createRoom,
   joinRoom,
   leaveRoom,
+  quickJoin,
   updateRoomSettings,
 } from '../../services/room-service.js';
 
@@ -78,6 +80,47 @@ export const setupRoomHandlers = (io: Server, socket: Socket) => {
 
     // Broadcast updated room info to all players
     broadcastRoomUpdate(data.roomId, io);
+  });
+
+  socket.on(RoomEvents.QUICK_JOIN, (data: QuickJoinRequest) => {
+    const result = quickJoin(socket.id, data.username);
+
+    if (!result) {
+      return socket.emit(RoomEvents.NO_ROOMS_AVAILABLE, {
+        timestamp: Date.now(),
+      });
+    }
+
+    if (result === 'IN_PROGRESS' || result === 'FULL') {
+      // This should not happen due to filtering in quickJoin function, but handle it just in case
+      return socket.emit(ConnectionEvents.ERROR, {
+        timestamp: Date.now(),
+        error:
+          result === 'IN_PROGRESS'
+            ? 'Game already in progress'
+            : 'Room is full',
+      });
+    }
+
+    // Join the socket to the room
+    socket.join(result.id);
+
+    // Notify the player
+    socket.emit(RoomEvents.ROOM_JOINED, {
+      timestamp: Date.now(),
+      room: result,
+    });
+
+    // Notify others
+    socket.to(result.id).emit(RoomEvents.PLAYER_JOINED, {
+      timestamp: Date.now(),
+      roomId: result.id,
+      playerId: socket.id,
+      username: data.username,
+    });
+
+    // Broadcast updated room info to all players
+    broadcastRoomUpdate(result.id, io);
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

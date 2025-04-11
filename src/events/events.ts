@@ -17,6 +17,8 @@ export enum RoomEvents {
   ROOM_UPDATED = 'room_updated',
   PLAYER_JOINED = 'player_joined',
   PLAYER_LEFT = 'player_left',
+  QUICK_JOIN = 'quick_join',
+  NO_ROOMS_AVAILABLE = 'no_rooms_available',
 }
 
 // Game play events
