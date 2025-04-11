@@ -21,6 +21,10 @@ export interface UpdateSettingsRequest extends BaseSocketMessage {
   config: RoomConfig;
 }
 
+export interface QuickJoinRequest extends BaseSocketMessage {
+  username: string;
+}
+
 // Response payloads
 export interface RoomResponse extends BaseSocketMessage {
   room: Room;
