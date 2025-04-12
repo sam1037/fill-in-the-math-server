@@ -10,6 +10,8 @@ export enum RoomEvents {
   CREATE_ROOM = 'create_room',
   JOIN_ROOM = 'join_room',
   LEAVE_ROOM = 'leave_room',
+  DELETE_ROOM = 'delete_room',
+  CONTINUE_GAME = 'continue_game',
   UPDATE_SETTINGS = 'update_settings',
   ROOM_CREATED = 'room_created',
   ROOM_JOINED = 'room_joined',
@@ -19,6 +21,7 @@ export enum RoomEvents {
   PLAYER_LEFT = 'player_left',
   QUICK_JOIN = 'quick_join',
   NO_ROOMS_AVAILABLE = 'no_rooms_available',
+  ROOM_DELETED = 'room_deleted',
 }
 
 // Game play events

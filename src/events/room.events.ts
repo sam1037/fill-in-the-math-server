@@ -16,6 +16,14 @@ export interface LeaveRoomRequest extends BaseSocketMessage {
   roomId: string;
 }
 
+export interface DeleteRoomRequest extends BaseSocketMessage {
+  roomId: string;
+}
+
+export interface ContinueGameRequest extends BaseSocketMessage {
+  roomId: string;
+}
+
 export interface UpdateSettingsRequest extends BaseSocketMessage {
   roomId: string;
   config: RoomConfig;

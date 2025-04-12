@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { GameEvents } from '../events/events.js';
+import { GameEvents, RoomEvents } from '../events/events.js';
 import { RoomStatus } from '../types/game.types.js';
 import { rooms } from '../state/game-state.js';
 import { generateQuestion } from './question-generator.js';
@@ -132,7 +132,7 @@ export const sendQuestionToPlayer = (
   if (!player || player.health <= 0) return;
 
   // Generate a new question
-  const question = generateQuestion(room.config.questionDifficulty);
+  const question = generateQuestion(room.config.Difficulty);
 
   // Store the question with the player
   player.currentQuestion = question;
@@ -186,7 +186,7 @@ export const broadcastRoomUpdate = (roomId: string, io: Server) => {
   const room = rooms.get(roomId);
   if (!room) return;
 
-  io.to(roomId).emit('room_updated', {
+  io.to(roomId).emit(RoomEvents.ROOM_UPDATED, {
     timestamp: Date.now(),
     room,
   });

@@ -1,13 +1,8 @@
 import { Server } from 'socket.io';
-import {
-  Player,
-  QuestionDifficulty,
-  Room,
-  RoomConfig,
-  RoomStatus,
-} from '../types/game.types.js';
+import { Player, Room, RoomConfig, RoomStatus } from '../types/game.types.js';
 import { endGame } from '../utils/game-logic.js';
 import { rooms, playerRooms, playerTimers } from '../state/game-state.js';
+import { Difficulty } from '../types/question.enum.js';
 
 export const createRoom = (
   socketId: string,
@@ -15,7 +10,7 @@ export const createRoom = (
   roomName: string,
   config?: {
     timeLimit?: number;
-    questionDifficulty?: QuestionDifficulty;
+    Difficulty?: Difficulty;
     maxPlayers?: number;
     attackDamage?: number;
     healAmount?: number;
@@ -40,8 +35,7 @@ export const createRoom = (
     players: [player],
     config: {
       timeLimit: config?.timeLimit || 60,
-      questionDifficulty:
-        config?.questionDifficulty || QuestionDifficulty.MEDIUM,
+      Difficulty: config?.Difficulty || Difficulty.MEDIUM,
       maxPlayers: config?.maxPlayers || 4,
       attackDamage: config?.attackDamage || 5,
       healAmount: config?.healAmount || 3,
@@ -174,4 +168,51 @@ export const quickJoin = (socketId: string, username: string) => {
 
   // Join the room using the existing joinRoom function
   return joinRoom(socketId, roomToJoin.id, username);
+};
+
+export const deleteRoom = (socketId: string, roomId: string) => {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+
+  // Only the host can delete a room
+  if (socketId !== room.hostId) return 'NOT_HOST';
+
+  // Remove all players from the room
+  room.players.forEach((player) => {
+    playerRooms.delete(player.id);
+
+    // Stop player timer if exists
+    if (playerTimers.has(player.id)) {
+      clearInterval(playerTimers.get(player.id)!);
+      playerTimers.delete(player.id);
+    }
+  });
+
+  // Delete the room
+  rooms.delete(roomId);
+
+  return { roomId };
+};
+
+export const continueGame = (socketId: string, roomId: string) => {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+
+  // Only the host can continue the game
+  if (socketId !== room.hostId) return 'NOT_HOST';
+
+  // Room must be in FINISHED state to continue
+  if (room.status !== RoomStatus.FINISHED) return 'INVALID_STATE';
+
+  // Reset player health and scores for a new game
+  room.players.forEach((player) => {
+    player.health = 0;
+    player.score = 0;
+    player.currentQuestionIndex = 0;
+  });
+
+  // Set the room status back to WAITING
+  room.status = RoomStatus.WAITING;
+
+  return room;
 };
