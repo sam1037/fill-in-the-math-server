@@ -6,6 +6,8 @@ import {
   LeaveRoomRequest,
   QuickJoinRequest,
   UpdateSettingsRequest,
+  DeleteRoomRequest,
+  ContinueGameRequest,
 } from '../../events/room.events.js';
 import { broadcastRoomUpdate } from '../../utils/game-logic.js';
 import {
@@ -14,6 +16,8 @@ import {
   leaveRoom,
   quickJoin,
   updateRoomSettings,
+  deleteRoom,
+  continueGame,
 } from '../../services/room-service.js';
 
 export const setupRoomHandlers = (io: Server, socket: Socket) => {
@@ -167,6 +171,69 @@ export const setupRoomHandlers = (io: Server, socket: Socket) => {
     }
 
     // Broadcast updated room info to all players
+    broadcastRoomUpdate(data.roomId, io);
+  });
+
+  socket.on(RoomEvents.DELETE_ROOM, (data: DeleteRoomRequest) => {
+    const result = deleteRoom(socket.id, data.roomId);
+
+    if (!result) {
+      return socket.emit(ConnectionEvents.ERROR, {
+        timestamp: Date.now(),
+        error: 'Room not found',
+      });
+    }
+
+    if (result === 'NOT_HOST') {
+      return socket.emit(ConnectionEvents.ERROR, {
+        timestamp: Date.now(),
+        error: 'Only host can delete the room',
+      });
+    }
+
+    // Notify all players in the room that it has been deleted
+    io.to(data.roomId).emit(RoomEvents.ROOM_DELETED, {
+      timestamp: Date.now(),
+      roomId: data.roomId,
+    });
+
+    // Each player will leave the room
+    const clients = io.sockets.adapter.rooms.get(data.roomId);
+    if (clients) {
+      clients.forEach((clientId) => {
+        const clientSocket = io.sockets.sockets.get(clientId);
+        if (clientSocket) {
+          clientSocket.leave(data.roomId);
+        }
+      });
+    }
+  });
+
+  socket.on(RoomEvents.CONTINUE_GAME, (data: ContinueGameRequest) => {
+    const result = continueGame(socket.id, data.roomId);
+
+    if (!result) {
+      return socket.emit(ConnectionEvents.ERROR, {
+        timestamp: Date.now(),
+        error: 'Room not found',
+      });
+    }
+
+    if (result === 'NOT_HOST') {
+      return socket.emit(ConnectionEvents.ERROR, {
+        timestamp: Date.now(),
+        error: 'Only host can continue the game',
+      });
+    }
+
+    if (result === 'INVALID_STATE') {
+      return socket.emit(ConnectionEvents.ERROR, {
+        timestamp: Date.now(),
+        error: 'Room is not in a finished state',
+      });
+    }
+
+    // Broadcast the updated room status to all players
     broadcastRoomUpdate(data.roomId, io);
   });
 };
