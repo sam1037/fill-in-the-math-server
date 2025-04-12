@@ -1,4 +1,4 @@
-import { MathSymbol } from './game.types.js';
+import { MathSymbol } from './question.enum.js';
 import { randint } from '../utils/utils.js';
 
 export const blank_difficulty_mapping = {

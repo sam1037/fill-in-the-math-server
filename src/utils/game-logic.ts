@@ -132,7 +132,7 @@ export const sendQuestionToPlayer = (
   if (!player || player.health <= 0) return;
 
   // Generate a new question
-  const question = generateQuestion(room.config.questionDifficulty);
+  const question = generateQuestion(room.config.Difficulty);
 
   // Store the question with the player
   player.currentQuestion = question;

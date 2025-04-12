@@ -1,13 +1,8 @@
 import { Server } from 'socket.io';
-import {
-  Player,
-  QuestionDifficulty,
-  Room,
-  RoomConfig,
-  RoomStatus,
-} from '../types/game.types.js';
+import { Player, Room, RoomConfig, RoomStatus } from '../types/game.types.js';
 import { endGame } from '../utils/game-logic.js';
 import { rooms, playerRooms, playerTimers } from '../state/game-state.js';
+import { Difficulty } from '../types/question.enum.js';
 
 export const createRoom = (
   socketId: string,
@@ -15,7 +10,7 @@ export const createRoom = (
   roomName: string,
   config?: {
     timeLimit?: number;
-    questionDifficulty?: QuestionDifficulty;
+    Difficulty?: Difficulty;
     maxPlayers?: number;
     attackDamage?: number;
     healAmount?: number;
@@ -40,8 +35,7 @@ export const createRoom = (
     players: [player],
     config: {
       timeLimit: config?.timeLimit || 60,
-      questionDifficulty:
-        config?.questionDifficulty || QuestionDifficulty.MEDIUM,
+      Difficulty: config?.Difficulty || Difficulty.MEDIUM,
       maxPlayers: config?.maxPlayers || 4,
       attackDamage: config?.attackDamage || 5,
       healAmount: config?.healAmount || 3,
