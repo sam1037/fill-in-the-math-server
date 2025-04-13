@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
   date_registered TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   current_ranking_score INTEGER DEFAULT 0,
   profile_picture VARCHAR(255),
-  user_type VARCHAR(10) NOT NULL CHECK (user_type IN ('Player', 'Host', 'Admin'))
+  user_type VARCHAR(10) NOT NULL CHECK (user_type IN ('Player', 'Host', 'Admin')),
+  experience INTEGER DEFAULT 0
 );
 
 -- Indexes for performance
