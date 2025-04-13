@@ -20,6 +20,7 @@ export const createRoom = (
     attackDamage?: number;
     healAmount?: number;
     wrongAnswerPenalty?: number;
+    isPublic?: boolean;
   }
 ) => {
   const roomId = Math.random().toString(36).substring(2, 9);
@@ -45,6 +46,7 @@ export const createRoom = (
       attackDamage: config?.attackDamage || 5,
       healAmount: config?.healAmount || 3,
       wrongAnswerPenalty: config?.wrongAnswerPenalty || 3,
+      isPublic: config?.isPublic || false,
     },
     status: RoomStatus.WAITING,
   };
@@ -134,4 +136,42 @@ export const updateRoomSettings = (
   room.config = { ...room.config, ...config };
 
   return room;
+};
+
+export const quickJoin = (socketId: string, username: string) => {
+  // Create an array of all available public rooms
+  const availableRooms: Room[] = [];
+
+  for (const [, room] of rooms) {
+    // Only include rooms that are:
+    // 1. Public
+    // 2. In waiting status
+    // 3. Not full
+    if (
+      room.config.isPublic &&
+      room.status === RoomStatus.WAITING &&
+      room.players.length < room.config.maxPlayers
+    ) {
+      availableRooms.push(room);
+    }
+  }
+
+  // If no rooms are available, return null
+  if (availableRooms.length === 0) {
+    return null;
+  }
+
+  // Sort rooms by number of open slots (maxPlayers - currentPlayers)
+  // Rooms with fewer open slots have higher priority (will be joined first)
+  availableRooms.sort((a, b) => {
+    const aOpenSlots = a.config.maxPlayers - a.players.length;
+    const bOpenSlots = b.config.maxPlayers - b.players.length;
+    return aOpenSlots - bOpenSlots;
+  });
+
+  // Get the highest priority room (smallest number of open slots)
+  const roomToJoin = availableRooms[0];
+
+  // Join the room using the existing joinRoom function
+  return joinRoom(socketId, roomToJoin.id, username);
 };

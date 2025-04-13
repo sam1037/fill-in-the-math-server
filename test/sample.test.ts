@@ -1,3 +1,3 @@
-test('No test is requred', () => {
+xtest('No test is requred', () => {
   // No test is required
 });

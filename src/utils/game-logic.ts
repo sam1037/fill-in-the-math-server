@@ -1,55 +1,68 @@
 import { Server } from 'socket.io';
 import { GameEvents } from '../events/events.js';
 import { RoomStatus } from '../types/game.types.js';
-import { rooms, playerTimers } from '../state/game-state.js';
+import { rooms } from '../state/game-state.js';
 import { generateQuestion } from './question-generator.js';
 
-// Start health countdown for a player
-export const startPlayerTimer = (
-  socketId: string,
-  roomId: string,
-  io: Server
-) => {
-  if (playerTimers.has(socketId)) {
-    clearInterval(playerTimers.get(socketId)!);
+// Track room timers instead of player timers
+const roomTimers = new Map<string, NodeJS.Timeout>();
+
+// Helper function to send health updates for all players in a room
+export const sendHealthUpdates = (roomId: string, io: Server) => {
+  const room = rooms.get(roomId);
+  if (!room) return;
+
+  // Collect all player health updates
+  const healthUpdates = room.players.map((player) => ({
+    playerId: player.id,
+    newHealth: player.health,
+  }));
+
+  // Send a single health update with all players' health
+  io.to(roomId).emit(GameEvents.HEALTH_UPDATED, {
+    timestamp: Date.now(),
+    updates: healthUpdates,
+  });
+};
+
+// Start health countdown for all players in a room
+export const startRoomTimer = (roomId: string, io: Server) => {
+  // Clear any existing room timer
+  if (roomTimers.has(roomId)) {
+    clearInterval(roomTimers.get(roomId)!);
   }
 
   const room = rooms.get(roomId);
   if (!room) return;
 
-  const player = room.players.find((p) => p.id === socketId);
-  if (!player) return;
-
   const timer = setInterval(() => {
-    player.health -= 1;
+    // Reduce health for all active players at once
+    room.players.forEach((player) => {
+      if (player.health > 0) {
+        player.health -= 1;
 
-    // Broadcast health update to all players in the room
-    io.to(roomId).emit(GameEvents.HEALTH_UPDATED, {
-      timestamp: Date.now(),
-      playerId: socketId,
-      newHealth: player.health,
+        // Check if player is eliminated
+        if (player.health <= 0) {
+          // Notify all players about elimination
+          io.to(roomId).emit(GameEvents.PLAYER_ELIMINATED, {
+            timestamp: Date.now(),
+            playerId: player.id,
+          });
+        }
+      }
     });
 
-    // Check if player is eliminated
-    if (player.health <= 0) {
-      clearInterval(timer);
-      playerTimers.delete(socketId);
+    // Broadcast health updates once for all players
+    sendHealthUpdates(roomId, io);
 
-      // Notify all players about elimination
-      io.to(roomId).emit(GameEvents.PLAYER_ELIMINATED, {
-        timestamp: Date.now(),
-        playerId: socketId,
-      });
-
-      // Check if game is over
-      const alivePlayers = room.players.filter((p) => p.health > 0);
-      if (alivePlayers.length <= 1) {
-        endGame(roomId, io);
-      }
+    // Check if game is over
+    const alivePlayers = room.players.filter((p) => p.health > 0);
+    if (alivePlayers.length <= 1) {
+      endGame(roomId, io);
     }
   }, 1000);
 
-  playerTimers.set(socketId, timer);
+  roomTimers.set(roomId, timer);
 };
 
 // End the game and generate leaderboard
@@ -57,13 +70,11 @@ export const endGame = (roomId: string, io: Server) => {
   const room = rooms.get(roomId);
   if (!room) return;
 
-  // Stop all timers
-  room.players.forEach((player) => {
-    if (playerTimers.has(player.id)) {
-      clearInterval(playerTimers.get(player.id)!);
-      playerTimers.delete(player.id);
-    }
-  });
+  // Stop room timer
+  if (roomTimers.has(roomId)) {
+    clearInterval(roomTimers.get(roomId)!);
+    roomTimers.delete(roomId);
+  }
 
   // Generate leaderboard
   const leaderboard = room.players
@@ -80,7 +91,17 @@ export const endGame = (roomId: string, io: Server) => {
     entry.rank = index + 1;
   });
 
-  const winner = leaderboard.length > 0 ? leaderboard[0].playerId : '';
+  // Check for tied scores - if all players have the same score, there's no winner
+  let winner = '';
+  if (leaderboard.length > 0) {
+    const topScore = leaderboard[0].score;
+    const allTied = leaderboard.every((entry) => entry.score === topScore);
+
+    // Only set a winner if not everyone is tied
+    if (!allTied) {
+      winner = leaderboard[0].playerId;
+    }
+  }
 
   // Update room status
   room.status = RoomStatus.FINISHED;
@@ -141,20 +162,11 @@ export const applyWrongAnswerPenalty = (
   // Ensure health doesn't go below 0
   if (player.health < 0) player.health = 0;
 
-  // Broadcast health update to all players in the room
-  io.to(roomId).emit(GameEvents.HEALTH_UPDATED, {
-    timestamp: Date.now(),
-    playerId: socketId,
-    newHealth: player.health,
-  });
+  // Broadcast health update to all players in the room using the helper function
+  sendHealthUpdates(roomId, io);
 
   // Check if player is eliminated
   if (player.health <= 0) {
-    if (playerTimers.has(socketId)) {
-      clearInterval(playerTimers.get(socketId)!);
-      playerTimers.delete(socketId);
-    }
-
     // Notify all players about elimination
     io.to(roomId).emit(GameEvents.PLAYER_ELIMINATED, {
       timestamp: Date.now(),
