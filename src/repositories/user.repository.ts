@@ -91,7 +91,7 @@ export const UserRepository = {
    * @param user The new user data
    * @param client Optional database client for transaction support
    */
-  update: async (
+  oldUpdate: async (
     userId: number,
     updateData: UpdateUserDto,
     client?: PoolClient
@@ -131,15 +131,66 @@ export const UserRepository = {
     }
   },
 
+  //update an existing user
+  async update(
+    userId: number,
+    updateData: UpdateUserDto
+  ): Promise<User | null> {
+    try {
+      // Filter out undefined values
+      const entries = Object.entries(updateData);
+
+      // If nothing to update, return the current user
+      if (entries.length === 0) {
+        return await UserRepository.findById(userId);
+      }
+
+      // Build SET part of the query dynamically
+      const setClauses = entries.map(
+        ([key], index) => `${key} = $${index + 1}`
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const values = entries.map(([_key, value]) => value);
+
+      // Add userId as the last parameter
+      values.push(userId);
+
+      // Construct the full query
+      const query = `UPDATE users SET ${setClauses.join(', ')} WHERE user_id = $${values.length} RETURNING *`;
+
+      // Execute the query
+      const result: QueryResult<User> = await pool.query(query, values);
+
+      return result.rows[0] || null;
+    } catch (error: unknown) {
+      console.error(`Error updating user with ID ${userId}:`, error);
+      throw error;
+    }
+  },
+
   /**
    * Delete a user by ID
    * @param userId The ID of the user to delete
    * @param client Optional database client for transaction support
    */
-  delete: async (userId: number, client?: PoolClient): Promise<boolean> => {
+  oldDelete: async (userId: number, client?: PoolClient): Promise<boolean> => {
     const queryRunner = client || pool;
     try {
       const result = await queryRunner.query(
+        'DELETE FROM users WHERE user_id = $1 RETURNING user_id',
+        [userId]
+      );
+      // Return true if a record was deleted, false otherwise
+      return (result.rowCount ?? 0) > 0;
+    } catch (error: unknown) {
+      console.error(`Error deleting user with ID ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  async delete(userId: number): Promise<boolean> {
+    try {
+      const result = await pool.query(
         'DELETE FROM users WHERE user_id = $1 RETURNING user_id',
         [userId]
       );
@@ -156,13 +207,22 @@ export const UserRepository = {
    * @param email The user email to look up
    * @param client Optional database client for transaction support
    */
-  findByEmail: async (
+  oldFindByEmail: async (
     email: string,
     client?: PoolClient
   ): Promise<User | null> => {
     // Use provided client or fallback to pool
     const queryRunner = client || pool;
     const result: QueryResult<User> = await queryRunner.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+    return result.rows[0] || null;
+  },
+
+  //find user by email
+  async findByEmail(email: string): Promise<User | null> {
+    const result: QueryResult<User> = await pool.query(
       'SELECT * FROM users WHERE email = $1',
       [email]
     );

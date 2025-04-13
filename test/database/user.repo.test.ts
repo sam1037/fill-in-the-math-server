@@ -153,8 +153,7 @@ describe('User Repository', () => {
     // Act
     const updatedUser = await UserRepository.update(
       createdUser.user_id,
-      updates,
-      client
+      updates
     );
 
     // Assert
@@ -183,7 +182,7 @@ describe('User Repository', () => {
     };
 
     // Act
-    const result = await UserRepository.update(nonExistentId, updates, client);
+    const result = await UserRepository.update(nonExistentId, updates);
 
     // Assert
     expect(result).toBeNull();
@@ -206,10 +205,7 @@ describe('User Repository', () => {
     const createdUser = await UserRepository.create(userToDelete);
 
     // Act
-    const deleteResult = await UserRepository.delete(
-      createdUser.user_id,
-      client
-    );
+    const deleteResult = await UserRepository.delete(createdUser.user_id);
 
     // Assert
     expect(deleteResult).toBe(true);
@@ -224,7 +220,7 @@ describe('User Repository', () => {
     const nonExistentId = 9999;
 
     // Act
-    const deleteResult = await UserRepository.delete(nonExistentId, client);
+    const deleteResult = await UserRepository.delete(nonExistentId);
 
     // Assert
     expect(deleteResult).toBe(false);
@@ -254,8 +250,7 @@ describe('User Repository', () => {
 
     const updatedUser = await UserRepository.update(
       createdUser.user_id,
-      partialUpdate,
-      client
+      partialUpdate
     );
 
     // Assert
