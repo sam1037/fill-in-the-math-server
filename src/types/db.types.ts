@@ -13,6 +13,7 @@ export interface User {
   current_ranking_score: number;
   profile_picture: string | null;
   user_type: UserType;
+  experience: number;
 }
 
 // Type for creating a new user (without auto-generated fields)

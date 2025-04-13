@@ -11,33 +11,40 @@ import {
 
 describe('User Repository', () => {
   let client: PoolClient;
+  //let transactionClient: PoolClient;
 
-  beforeEach(async () => {
-    // Begin transaction
-    client = await pool.connect();
-    await client.query('BEGIN');
-  });
-
-  afterEach(async () => {
-    // Rollback transaction after each test
-    await client.query('ROLLBACK');
-    client.release();
-  });
-
-  // Set up once before all tests
   beforeAll(async () => {
     await resetDatabase();
     await seedUsers();
+    // Create and store a dedicated transaction client
+    //transactionClient = await pool.connect();
+    //await transactionClient.query('BEGIN');
   });
 
-  // Clean up after all tests
+  beforeEach(async () => {
+    await resetDatabase();
+    await seedUsers();
+    // Create a savepoint on the same transaction client
+    //await transactionClient.query('SAVEPOINT test_savepoint');
+    client = await pool.connect();
+  });
+
+  afterEach(() => {
+    client.release();
+    // Rollback to the savepoint on the same client
+    //await transactionClient.query('ROLLBACK TO SAVEPOINT test_savepoint');
+  });
+
   afterAll(async () => {
+    // Rollback the entire transaction and release the client
+    //await transactionClient.query('ROLLBACK');
+    //transactionClient.release();
     await pool.end();
   });
 
   test('should find all users', async () => {
     // Arrange & Act
-    const users = await UserRepository.findAll(client);
+    const users = await UserRepository.findAll();
 
     console.log('Users:', users); // Debugging line to check the output
 
@@ -55,11 +62,11 @@ describe('User Repository', () => {
 
   test('should find a user by ID', async () => {
     // Arrange - First get a valid user ID from the database
-    const allUsers = await UserRepository.findAll(client);
+    const allUsers = await UserRepository.findAll();
     const testUserId = allUsers[0].user_id;
 
     // Act - Find that specific user
-    const foundUser = await UserRepository.findById(testUserId, client);
+    const foundUser = await UserRepository.findById(testUserId);
 
     // Assert
     expect(foundUser).toBeDefined();
@@ -70,7 +77,7 @@ describe('User Repository', () => {
   test('should return null when finding a non-existent user ID', async () => {
     // Act - Try to find a user with an ID that shouldn't exist
     const nonExistentId = 9999;
-    const foundUser = await UserRepository.findById(nonExistentId, client);
+    const foundUser = await UserRepository.findById(nonExistentId);
 
     // Assert
     expect(foundUser).toBeNull();
@@ -86,10 +93,18 @@ describe('User Repository', () => {
       current_ranking_score: 100,
       profile_picture: null,
       user_type: 'Player' as UserType, // Use the correct literal from your type
+      experience: 1,
     };
 
+    // Log the current db state before adding new user, TODO to delete
+    //const allUsers = await UserRepository.findAll();
+    //console.log(
+    //  'Users before creation:',
+    //  allUsers.map((u) => u.username)
+    //);
+
     // Act
-    const createdUser = await UserRepository.create(newUser, client);
+    const createdUser = await UserRepository.create(newUser);
 
     // Assert
     expect(createdUser).toBeDefined();
@@ -99,10 +114,7 @@ describe('User Repository', () => {
     expect(createdUser.user_type).toBe(newUser.user_type);
 
     // Verify it was actually saved to the database
-    const foundUser = await UserRepository.findById(
-      createdUser.user_id,
-      client
-    );
+    const foundUser = await UserRepository.findById(createdUser.user_id);
     expect(foundUser).not.toBeNull();
     expect(foundUser?.username).toBe(newUser.username);
   });
@@ -119,9 +131,17 @@ describe('User Repository', () => {
       current_ranking_score: 50,
       profile_picture: null,
       user_type: 'Player' as UserType,
+      experience: 1,
     };
 
-    const createdUser = await UserRepository.create(newUser, client);
+    // Log the current db state before adding new user, TODO to delete
+    const allUsers = await UserRepository.findAll();
+    console.log(
+      'Users before creation:',
+      allUsers.map((u) => u.username)
+    );
+
+    const createdUser = await UserRepository.create(newUser);
 
     // Define the updates we want to make
     const updates: UpdateUserDto = {
@@ -133,8 +153,7 @@ describe('User Repository', () => {
     // Act
     const updatedUser = await UserRepository.update(
       createdUser.user_id,
-      updates,
-      client
+      updates
     );
 
     // Assert
@@ -147,10 +166,7 @@ describe('User Repository', () => {
     expect(updatedUser?.email).toBe(newUser.email); // Should remain unchanged
 
     // Verify changes are persisted in the database
-    const foundUser = await UserRepository.findById(
-      createdUser.user_id,
-      client
-    );
+    const foundUser = await UserRepository.findById(createdUser.user_id);
     expect(foundUser?.username).toBe(updates.username);
     expect(foundUser?.current_ranking_score).toBe(
       updates.current_ranking_score
@@ -166,7 +182,7 @@ describe('User Repository', () => {
     };
 
     // Act
-    const result = await UserRepository.update(nonExistentId, updates, client);
+    const result = await UserRepository.update(nonExistentId, updates);
 
     // Assert
     expect(result).toBeNull();
@@ -183,24 +199,19 @@ describe('User Repository', () => {
       current_ranking_score: 10,
       profile_picture: null,
       user_type: 'Player' as UserType,
+      experience: 1,
     };
 
-    const createdUser = await UserRepository.create(userToDelete, client);
+    const createdUser = await UserRepository.create(userToDelete);
 
     // Act
-    const deleteResult = await UserRepository.delete(
-      createdUser.user_id,
-      client
-    );
+    const deleteResult = await UserRepository.delete(createdUser.user_id);
 
     // Assert
     expect(deleteResult).toBe(true);
 
     // Verify the user no longer exists
-    const foundUser = await UserRepository.findById(
-      createdUser.user_id,
-      client
-    );
+    const foundUser = await UserRepository.findById(createdUser.user_id);
     expect(foundUser).toBeNull();
   });
 
@@ -209,7 +220,7 @@ describe('User Repository', () => {
     const nonExistentId = 9999;
 
     // Act
-    const deleteResult = await UserRepository.delete(nonExistentId, client);
+    const deleteResult = await UserRepository.delete(nonExistentId);
 
     // Assert
     expect(deleteResult).toBe(false);
@@ -226,9 +237,10 @@ describe('User Repository', () => {
       current_ranking_score: 75,
       profile_picture: '/profiles/original.png',
       user_type: 'Host' as UserType,
+      experience: 1,
     };
 
-    const createdUser = await UserRepository.create(completeUser, client);
+    const createdUser = await UserRepository.create(completeUser);
 
     // Act - Only update one field
     const partialUpdate: UpdateUserDto = {
@@ -238,8 +250,7 @@ describe('User Repository', () => {
 
     const updatedUser = await UserRepository.update(
       createdUser.user_id,
-      partialUpdate,
-      client
+      partialUpdate
     );
 
     // Assert
