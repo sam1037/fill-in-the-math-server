@@ -1,4 +1,4 @@
-import { MathSymbol } from '../types/game.types.js';
+import { MathSymbol } from '../types/question.enum.js';
 import { isNumber } from './utils.js';
 
 /**

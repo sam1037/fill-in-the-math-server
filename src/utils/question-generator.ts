@@ -1,14 +1,11 @@
-import {
-  Question,
-  QuestionDifficulty,
-  MathSymbol,
-} from '../types/game.types.js';
+import { Question } from '../types/game.types.js';
 import {
   blank_difficulty_mapping,
   num_operation_difficulty_mapping,
   operator_difficulty_mapping,
 } from '../types/game.dictionary.js';
 import { randint, isNumber } from './utils.js';
+import { MathSymbol, Difficulty } from '../types/question.enum.js';
 
 function calculate_result(numbers: number[], selectedOperators: MathSymbol[]) {
   // Calculate the result on right hand side
@@ -86,7 +83,7 @@ function generate_number(
  * The blank answer must be a number between 0 - 9 and without replacement each other.
  * There should be only 1 blank or 1 number after MathSymbol.EqFuals
  */
-export function generateQuestion(difficulty: QuestionDifficulty): Question {
+export function generateQuestion(difficulty: Difficulty): Question {
   // Generate random operators
   const operators = operator_difficulty_mapping[difficulty];
   const numOperations = num_operation_difficulty_mapping[difficulty];
@@ -97,7 +94,7 @@ export function generateQuestion(difficulty: QuestionDifficulty): Question {
     let randomIndex = randint(operators.length - 1);
 
     if (
-      difficulty == QuestionDifficulty.MEDIUM &&
+      difficulty == Difficulty.MEDIUM &&
       selectedOperators.includes(
         // eslint-disable-next-line  @typescript-eslint/no-unnecessary-condition
         MathSymbol.Multiplication || MathSymbol.Division
@@ -106,7 +103,7 @@ export function generateQuestion(difficulty: QuestionDifficulty): Question {
       // algorithm: for medium, only 1 operator if multiplication is allowed
       break;
     }
-    if (difficulty == QuestionDifficulty.HARD && i == 0) {
+    if (difficulty == Difficulty.HARD && i == 0) {
       // algorithm: for hard, pick from multiplication and division first
       randomIndex = randint(2, 3);
     }
@@ -144,7 +141,7 @@ export function generateQuestion(difficulty: QuestionDifficulty): Question {
   // Hard: 1 - 2 blanks
   let numBlanks = blank_difficulty_mapping[difficulty];
 
-  if (difficulty == QuestionDifficulty.MEDIUM && include_mul_div) {
+  if (difficulty == Difficulty.MEDIUM && include_mul_div) {
     // override for medium to 1 if multiplication/division case
     numBlanks = 1;
   }
@@ -167,7 +164,7 @@ export function generateQuestion(difficulty: QuestionDifficulty): Question {
   // Randomly select positions for blanks
   const selectedBlankPositions = [];
   for (let i = 0; i < numBlanks; i++) {
-    if (difficulty == QuestionDifficulty.MEDIUM && include_mul_div && i >= 1)
+    if (difficulty == Difficulty.MEDIUM && include_mul_div && i >= 1)
       // if medium and mul div -> only 1 blank
       break;
     if (allPositions.length > 0) {
