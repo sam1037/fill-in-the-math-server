@@ -10,9 +10,13 @@ jest.mock('../../src/repositories/user.repository');
 jest.mock('bcrypt');
 
 describe('UserService', () => {
+  beforeAll(async () => {
+    await resetDatabase();
+  });
+
   //reset and seed the db b4 each test
   beforeEach(async () => {
-    await resetDatabase();
+    //await resetDatabase();
     await seedUsers();
   });
 
@@ -58,5 +62,15 @@ describe('UserService', () => {
       user_type: mockUser.user_type,
       experience: mockUser.experience,
     });
+  });
+
+  it('should successfully registrate a new user if given valid information', () => {
+    console.log('TODO');
+  });
+  it('should return error if email is already registered', () => {
+    console.log('TODO');
+  });
+  it('should return error if username is already used', () => {
+    console.log('TODO');
   });
 });

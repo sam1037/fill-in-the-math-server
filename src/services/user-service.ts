@@ -1,8 +1,8 @@
 // src/services/user.service.ts
 
-import { compare } from 'bcrypt';
+import bcrypt, { compare } from 'bcrypt';
 import { UserRepository } from '../repositories/user.repository.js';
-import { User } from '../types/db.types.js';
+import { CreateUserDto, User } from '../types/db.types.js';
 import { calculateLevel } from '../utils/user-level-calculator.js';
 
 // Login credential type
@@ -16,6 +16,13 @@ interface LoginResult {
   success: boolean;
   message: string;
   user?: Omit<User, 'password_hash'>; // Use Omit to exclude password_hash
+}
+
+// Registration data type
+interface RegistrationData {
+  email: string;
+  username: string;
+  password: string;
 }
 
 /**
@@ -85,6 +92,72 @@ export const UserService = {
     }
   },
 
+  /**
+   * Register a new user
+   * @param registrationData The email, username, and password for registration
+   * @returns Success status and message
+   */
+  registerUser: async (
+    registrationData: RegistrationData
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      // Input validation
+      if (
+        !registrationData.email ||
+        !registrationData.username ||
+        !registrationData.password
+      ) {
+        return {
+          success: false,
+          message: 'Email, username, and password are required',
+        };
+      }
+
+      // Check if email is already registered
+      const existingUser = await UserRepository.findByEmail(
+        registrationData.email
+      );
+      if (existingUser) {
+        return {
+          success: false,
+          message: 'Email already registered',
+        };
+      }
+
+      //TODO check if unique username (we assumed unique username in db)
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(registrationData.password, 10);
+
+      // Create the new user object
+      const newUser: CreateUserDto = {
+        email: registrationData.email,
+        username: registrationData.username,
+        password_hash: hashedPassword,
+        current_ranking_score: 0,
+        profile_picture: null,
+        user_type: 'Player',
+        experience: 0,
+      };
+
+      // Save the new user to the database
+      await UserRepository.create(newUser);
+
+      return {
+        success: true,
+        message: 'Registration successful',
+      };
+    } catch (error) {
+      console.error('Error during user registration:', error);
+      return {
+        success: false,
+        message: 'An error occurred during registration',
+      };
+    }
+  },
+
+  //? do we change the parameter to the entire user obj instead?
+  //get the user level from experince
   getUserLevel(experience: number) {
     return calculateLevel(experience);
   },
