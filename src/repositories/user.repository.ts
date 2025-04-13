@@ -1,5 +1,5 @@
 // src/repositories/user.repository.ts
-import pool from '../database/db.js';
+import pool, { query } from '../database/db.js';
 import { User, CreateUserDto, UpdateUserDto } from '../types/db.types.js';
 import { QueryResult, PoolClient } from 'pg';
 
@@ -7,29 +7,23 @@ import { QueryResult, PoolClient } from 'pg';
  * Repository for managing User data in the database
  */
 export const UserRepository = {
-  /**
-   * Find all users
-   * @param client Optional database client for transaction support
-   */
-  findAll: async (client?: PoolClient): Promise<User[]> => {
-    // Use provided client or fallback to pool
-    const queryRunner = client || pool;
-    const result: QueryResult<User> = await queryRunner.query(
-      'SELECT * FROM users ORDER BY user_id'
+  //find all users, return a promise of an array of User(s)
+  async findAll(): Promise<User[]> {
+    const result: QueryResult<User> = await query(
+      'SELECT * FROM users ORDER BY user_id',
+      []
     );
-    return result.rows;
+    return result.rows as User[];
   },
 
   /**
    * Find a user by ID
    * @param userId The user ID to look up
-   * @param client Optional database client for transaction support
    */
-  findById: async (
+  oldfindById: async (
     userId: number,
     client?: PoolClient
   ): Promise<User | null> => {
-    // Use provided client or fallback to pool
     const queryRunner = client || pool;
     const result: QueryResult<User> = await queryRunner.query(
       'SELECT * FROM users WHERE user_id = $1',
@@ -38,12 +32,23 @@ export const UserRepository = {
     return result.rows[0] || null;
   },
 
+  async findById(userId: number): Promise<User | null> {
+    const result: QueryResult<User> = await query(
+      'SELECT * FROM users WHERE user_id = $1',
+      [userId]
+    );
+    return result.rows[0] || null;
+  },
+
   /**
-   * Create a new user
-   * @param user The user data to insert
-   * @param client Optional database client for transaction support
+   *Create a new user
+   *@param user The user data to insert
+   *@param client Optional database client for transaction support
    */
-  create: async (user: CreateUserDto, client?: PoolClient): Promise<User> => {
+  oldCreate: async (
+    user: CreateUserDto,
+    client?: PoolClient
+  ): Promise<User> => {
     // Use provided client or fallback to pool
     const queryRunner = client || pool;
     const result: QueryResult<User> = await queryRunner.query(
@@ -55,6 +60,26 @@ export const UserRepository = {
         user.current_ranking_score,
         user.profile_picture,
         user.user_type,
+      ]
+    );
+    return result.rows[0];
+  },
+
+  /**
+   * Create a new user
+   * @param user The user data to insert
+   */
+  async create(user: CreateUserDto): Promise<User> {
+    const result = await query<User>(
+      'INSERT INTO users (username, email, password_hash, current_ranking_score, profile_picture, user_type, experience) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [
+        user.username,
+        user.email,
+        user.password_hash,
+        user.current_ranking_score,
+        user.profile_picture,
+        user.user_type,
+        user.experience,
       ]
     );
     return result.rows[0];
@@ -80,7 +105,7 @@ export const UserRepository = {
 
       // If nothing to update, return the current user
       if (entries.length === 0) {
-        return await UserRepository.findById(userId, client);
+        return await UserRepository.findById(userId);
       }
 
       // Build SET part of the query dynamically
@@ -124,6 +149,24 @@ export const UserRepository = {
       console.error(`Error deleting user with ID ${userId}:`, error);
       throw error;
     }
+  },
+
+  /**
+   * Find a user by email
+   * @param email The user email to look up
+   * @param client Optional database client for transaction support
+   */
+  findByEmail: async (
+    email: string,
+    client?: PoolClient
+  ): Promise<User | null> => {
+    // Use provided client or fallback to pool
+    const queryRunner = client || pool;
+    const result: QueryResult<User> = await queryRunner.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+    return result.rows[0] || null;
   },
 };
 
