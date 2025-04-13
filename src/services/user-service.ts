@@ -124,7 +124,7 @@ export const UserService = {
         };
       }
 
-      //TODO check if unique username (we assumed unique username in db)
+      //TODO check if unique username (since we assumed unique username in db)
 
       // Hash the password
       const hashedPassword = await bcrypt.hash(registrationData.password, 10);
