@@ -2,7 +2,12 @@
 
 import bcrypt, { compare } from 'bcrypt';
 import { UserRepository } from '../repositories/user.repository.js';
-import { CreateUserDto, User } from '../types/db.types.js';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  User,
+  UserType,
+} from '../types/db.types.js';
 import { calculateLevel } from '../utils/user-level-calculator.js';
 
 // Login credential type
@@ -19,7 +24,7 @@ interface LoginResult {
 }
 
 // Registration data type
-interface RegistrationData {
+export interface RegistrationData {
   email: string;
   username: string;
   password: string;
@@ -123,7 +128,7 @@ export const UserService = {
         };
       }
 
-      //TODO check if unique username (since we assumed unique username in db)
+      //note: username can be non unique
 
       // Hash the password
       const hashedPassword = await bcrypt.hash(registrationData.password, 10);
@@ -134,11 +139,11 @@ export const UserService = {
         username: registrationData.username,
         password_hash: hashedPassword,
         profile_picture: null,
-        user_type: 'Player',
+        user_type: 'Player' as UserType,
         experience: 0,
       };
 
-      // Save the new user to the database
+      // Save the new user to the database and return the success msg
       await UserRepository.create(newUser);
 
       return {
@@ -160,7 +165,32 @@ export const UserService = {
     return calculateLevel(experience);
   },
 
-  //TODO function to increase exp
+  // increase an user's exp
+  //? return what? should we return a json instead?
+  async increaseUserExp(
+    userId: number,
+    expToAdd: number
+  ): Promise<User | null> {
+    try {
+      //get user since we need to know original exp first, also check if valid userId
+      const user: User | null = await UserRepository.findById(userId);
+      if (!user) {
+        console.log('Invalid user ID!');
+        return null;
+      }
+
+      //create the update DTO
+      const update: UpdateUserDto = {
+        experience: user.experience + expToAdd,
+      };
+
+      //update exp by calling the function in user.repo
+      return await UserRepository.update(userId, update);
+    } catch (error) {
+      console.error('Error during user registration:', error);
+      return null;
+    }
+  },
 };
 
 export default UserService;

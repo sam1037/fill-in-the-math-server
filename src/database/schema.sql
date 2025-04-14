@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
   user_id SERIAL PRIMARY KEY,
   username VARCHAR(50) NOT NULL,
   email VARCHAR(100) NOT NULL UNIQUE,
-  password_hash CHAR(64) NOT NULL,
+  password_hash VARCHAR(64) NOT NULL,
   date_registered TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   profile_picture INTEGER, 
   user_type VARCHAR(10) NOT NULL CHECK (user_type IN ('Player', 'Host', 'Admin')),

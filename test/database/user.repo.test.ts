@@ -42,6 +42,20 @@ describe('User Repository', () => {
     await pool.end();
   });
 
+  test('should be able to find user by email', async () => {
+    // Arrange
+    // Seed users already creates a user with email admin@fillmath.com
+    const testEmail = 'admin@fillmath.com';
+
+    // Act
+    const foundUser = await UserRepository.findByEmail(testEmail);
+
+    // Assert
+    expect(foundUser).toBeDefined();
+    expect(foundUser).not.toBeNull();
+    expect(foundUser?.email).toBe(testEmail);
+  });
+
   test('should find all users', async () => {
     // Arrange & Act
     const users = await UserRepository.findAll();

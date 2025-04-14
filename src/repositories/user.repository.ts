@@ -101,7 +101,7 @@ export const UserRepository = {
 
   //find a user by email
   async findByEmail(email: string): Promise<User | null> {
-    const result: QueryResult<User> = await pool.query(
+    const result: QueryResult<User> = await query(
       'SELECT * FROM users WHERE email = $1',
       [email]
     );
