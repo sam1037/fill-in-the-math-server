@@ -13,8 +13,7 @@ export async function seedUsers() {
         email: 'admin@fillmath.com',
         password_hash:
           '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // SHA-256 of 'admin'
-        current_ranking_score: 1000,
-        profile_picture: '/profiles/admin.png',
+        profile_picture: 1,
         user_type: 'Admin',
         experience: 1000,
       },
@@ -23,8 +22,7 @@ export async function seedUsers() {
         email: 'jane@fillmath.com',
         password_hash:
           '2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3', // SHA-256 of 'host'
-        current_ranking_score: 800,
-        profile_picture: '/profiles/jane.png',
+        profile_picture: 2,
         user_type: 'Host',
         experience: 10,
       },
@@ -33,7 +31,6 @@ export async function seedUsers() {
         email: 'bob@example.com',
         password_hash:
           '5906ac361a137e2d286465cd6588ebb5ac3f5ae955001100bc41577c3d751764', // SHA-256 of 'player'
-        current_ranking_score: 350,
         profile_picture: null,
         user_type: 'Player',
         experience: 20,
@@ -43,8 +40,7 @@ export async function seedUsers() {
         email: 'alice@example.com',
         password_hash:
           '5906ac361a137e2d286465cd6588ebb5ac3f5ae955001100bc41577c3d751764', // SHA-256 of 'player'
-        current_ranking_score: 520,
-        profile_picture: '/profiles/alice.jpg',
+        profile_picture: 3,
         user_type: 'Player',
         experience: 40,
       },
@@ -54,13 +50,12 @@ export async function seedUsers() {
     for (const user of users) {
       await query(
         `INSERT INTO users 
-         (username, email, password_hash, current_ranking_score, profile_picture, user_type, experience) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         (username, email, password_hash, profile_picture, user_type, experience) 
+         VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           user.username,
           user.email,
           user.password_hash,
-          user.current_ranking_score,
           user.profile_picture,
           user.user_type,
           user.experience,

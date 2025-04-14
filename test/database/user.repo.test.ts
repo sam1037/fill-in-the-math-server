@@ -90,7 +90,6 @@ describe('User Repository', () => {
       email: 'test123@example.com',
       password_hash:
         'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', // SHA-256 of '123'
-      current_ranking_score: 100,
       profile_picture: null,
       user_type: 'Player' as UserType, // Use the correct literal from your type
       experience: 1,
@@ -128,7 +127,6 @@ describe('User Repository', () => {
       email: 'update@example.com',
       password_hash:
         'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
-      current_ranking_score: 50,
       profile_picture: null,
       user_type: 'Player' as UserType,
       experience: 1,
@@ -146,8 +144,7 @@ describe('User Repository', () => {
     // Define the updates we want to make
     const updates: UpdateUserDto = {
       username: 'updated_username',
-      current_ranking_score: 150,
-      profile_picture: '/profiles/updated.png',
+      profile_picture: 3,
     };
 
     // Act
@@ -159,18 +156,12 @@ describe('User Repository', () => {
     // Assert
     expect(updatedUser).not.toBeNull();
     expect(updatedUser?.username).toBe(updates.username);
-    expect(updatedUser?.current_ranking_score).toBe(
-      updates.current_ranking_score
-    );
     expect(updatedUser?.profile_picture).toBe(updates.profile_picture);
     expect(updatedUser?.email).toBe(newUser.email); // Should remain unchanged
 
     // Verify changes are persisted in the database
     const foundUser = await UserRepository.findById(createdUser.user_id);
     expect(foundUser?.username).toBe(updates.username);
-    expect(foundUser?.current_ranking_score).toBe(
-      updates.current_ranking_score
-    );
   });
 
   test('should return null when updating non-existent user', async () => {
@@ -196,7 +187,6 @@ describe('User Repository', () => {
       email: 'delete@example.com',
       password_hash:
         'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
-      current_ranking_score: 10,
       profile_picture: null,
       user_type: 'Player' as UserType,
       experience: 1,
@@ -234,8 +224,7 @@ describe('User Repository', () => {
       email: 'partial@example.com',
       password_hash:
         'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
-      current_ranking_score: 75,
-      profile_picture: '/profiles/original.png',
+      profile_picture: 2,
       user_type: 'Host' as UserType,
       experience: 1,
     };
@@ -244,7 +233,7 @@ describe('User Repository', () => {
 
     // Act - Only update one field
     const partialUpdate: UpdateUserDto = {
-      current_ranking_score: 100,
+      profile_picture: 4,
       // Only updating the score, other fields should remain unchanged
     };
 
@@ -255,10 +244,9 @@ describe('User Repository', () => {
 
     // Assert
     expect(updatedUser).not.toBeNull();
-    expect(updatedUser?.current_ranking_score).toBe(100); // Should be updated
+    expect(updatedUser?.profile_picture).toBe(partialUpdate.profile_picture); // Should be updated from 2 to 4
     expect(updatedUser?.username).toBe(completeUser.username); // Should remain unchanged
     expect(updatedUser?.email).toBe(completeUser.email); // Should remain unchanged
-    expect(updatedUser?.profile_picture).toBe(completeUser.profile_picture); // Should remain unchanged
     expect(updatedUser?.user_type).toBe(completeUser.user_type); // Should remain unchanged
   });
 });

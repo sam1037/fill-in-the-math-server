@@ -77,7 +77,6 @@ export const UserService = {
           username: user.username,
           email: user.email,
           date_registered: user.date_registered,
-          current_ranking_score: user.current_ranking_score,
           profile_picture: user.profile_picture,
           user_type: user.user_type,
           experience: user.experience,
@@ -134,7 +133,6 @@ export const UserService = {
         email: registrationData.email,
         username: registrationData.username,
         password_hash: hashedPassword,
-        current_ranking_score: 0,
         profile_picture: null,
         user_type: 'Player',
         experience: 0,
@@ -161,6 +159,8 @@ export const UserService = {
   getUserLevel(experience: number) {
     return calculateLevel(experience);
   },
+
+  //TODO function to increase exp
 };
 
 export default UserService;

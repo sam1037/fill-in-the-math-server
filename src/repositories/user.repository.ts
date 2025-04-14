@@ -34,12 +34,11 @@ export const UserRepository = {
    */
   async create(user: CreateUserDto): Promise<User> {
     const result = await query<User>(
-      'INSERT INTO users (username, email, password_hash, current_ranking_score, profile_picture, user_type, experience) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      'INSERT INTO users (username, email, password_hash, profile_picture, user_type, experience) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [
         user.username,
         user.email,
         user.password_hash,
-        user.current_ranking_score,
         user.profile_picture,
         user.user_type,
         user.experience,
