@@ -11,6 +11,7 @@ export function randint(min: number, max = NaN) {
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
 export const isNumber = (val: any) => typeof val === 'number' && val === val; // check for type and NaN
 
+//TODO what abt the case of compare int array with str array? see the test
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
 export function isArraysEqual(a: any[], b: any[]) {
   return a.toString() === b.toString();
