@@ -1,4 +1,4 @@
-import { calculateLevel } from '../src/utils/user-level-calculator.js';
+import { calculateLevel } from '../../src/utils/user-level-calculator.js';
 
 describe('User level calculator', () => {
   it('should return a number', () => {

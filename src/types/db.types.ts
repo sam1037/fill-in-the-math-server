@@ -10,8 +10,7 @@ export interface User {
   email: string;
   password_hash: string;
   date_registered: Date;
-  current_ranking_score: number;
-  profile_picture: string | null;
+  profile_picture: number | null;
   user_type: UserType;
   experience: number;
 }
