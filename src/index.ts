@@ -6,17 +6,42 @@ import dotenv from 'dotenv';
 import express, { Express, Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import session from 'express-session';
 import { setupSocketHandlers } from './socket/socket-handlers.js';
+import authRoutes from './routes/auth.routes.js';
 
 dotenv.config();
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001; // Changed default to 3001 to avoid conflict with Next.js
 const hostname = process.env.hostname || 'localhost';
 const client_url = process.env.client_url || 'http://localhost:3000';
 
 const app: Express = express();
 
-app.use(cors());
+// Middleware
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+
+app.use(
+  cors({
+    origin: [client_url, 'https://admin.socket.io', 'http://localhost:3000'],
+    credentials: true,
+  })
+);
+
+// Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'fill-in-the-math-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    },
+  })
+);
+
 const httpServer = createServer(app);
 console.log('client_url=', client_url);
 
@@ -42,6 +67,9 @@ instrument(io, {
 app.get('/', (req: Request, res: Response) => {
   res.send('Fill-in-the-Math Game Server');
 });
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 // CORS setup for HTTP server
 httpServer.prependListener('request', (req: Request, res: Response) => {
