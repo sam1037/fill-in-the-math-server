@@ -10,20 +10,26 @@ import {
 } from '../types/db.types.js';
 import { calculateLevel } from '../utils/user-level-calculator.js';
 
-// Login credential type
+/**
+ * Represents the structure of user login credentials.
+ */
 interface LoginCredentials {
   email: string;
   password: string;
 }
 
-// Login result type
+/**
+ * Represents the result object returned by the login verification process.
+ */
 interface LoginResult {
   success: boolean;
   message: string;
   user?: Omit<User, 'password_hash'>; // Use Omit to exclude password_hash
 }
 
-// Registration data type
+/**
+ * Represents the data required to register a new user.
+ */
 export interface RegistrationData {
   email: string;
   username: string;
@@ -98,8 +104,8 @@ export const UserService = {
 
   /**
    * Register a new user
-   * @param registrationData The email, username, and password for registration
-   * @returns Success status and message
+   * @param registrationData The email, username (can be non unique), and password for registration
+   * @returns Success status and message as a json
    */
   registerUser: async (
     registrationData: RegistrationData
@@ -159,14 +165,21 @@ export const UserService = {
     }
   },
 
-  //? do we change the parameter to the entire user obj instead?
-  //get the user level from experince
-  getUserLevel(experience: number) {
+  /**
+   * Calculates the user's level based on their experience points.
+   * @param experience The user's current experience points.
+   * @returns The calculated user level.
+   */
+  getUserLevel(experience: number): number {
     return calculateLevel(experience);
   },
 
-  // increase an user's exp
-  //? return what? should we return a json instead?
+  /**
+   * Increase User Exp given userId and exp to add
+   * @param userId the User Id of the user to increase exp
+   * @param expToAdd The amount of exp to increase
+   * @returns A promise that resolves to the updated user object if successful, or null if the user was not found.
+   */
   async increaseUserExp(
     userId: number,
     expToAdd: number
