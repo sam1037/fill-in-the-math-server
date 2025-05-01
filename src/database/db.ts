@@ -7,14 +7,28 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-// Create a new Pool instance with connection details from environment variables
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: true, // Required for Neon/Supabase
-  },
+// Determine if running in test environment
+const isTestEnvironment =
+  process.env.NODE_ENV === 'test' || process.env.CI === 'true';
+
+// Define database configuration based on environment
+const dbConfig = {
+  // For GitHub Actions or test environments without .env
+  connectionString:
+    process.env.DATABASE_URL ||
+    (isTestEnvironment
+      ? 'postgresql://postgres:postgres@localhost:5432/test_db'
+      : undefined),
+  ssl: !isTestEnvironment
+    ? {
+        rejectUnauthorized: true, // Required for Neon/Supabase
+      }
+    : false, // Disable SSL for local testing
   max: 5,
-});
+};
+
+// Create a new Pool instance with connection details
+const pool = new Pool(dbConfig);
 
 // Add error handling
 pool.on('error', (err) => {
