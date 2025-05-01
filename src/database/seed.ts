@@ -12,7 +12,7 @@ export async function seedUsers() {
         username: 'admin',
         email: 'admin@fillmath.com',
         password_hash:
-          '$2a$10$7v21QF6FjX.3pgBjjc7vNuIuuIpK3d2GJma8c3IgZiIMRDbckqJhu', // bycrpt (10) hash of 'admin'
+          '$2a$10$7v21QF6FjX.3pgBjjc7vNuIuuIpK3d2GJma8c3IgZiIMRDbckqJhu',
         profile_picture: 1,
         user_type: 'Admin',
         experience: 1000,
