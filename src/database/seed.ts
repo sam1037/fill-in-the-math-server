@@ -12,7 +12,7 @@ export async function seedUsers() {
         username: 'admin',
         email: 'admin@fillmath.com',
         password_hash:
-          '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // SHA-256 of 'admin'
+          '$2a$10$7v21QF6FjX.3pgBjjc7vNuIuuIpK3d2GJma8c3IgZiIMRDbckqJhu', // bycrpt (10) hash of 'admin'
         profile_picture: 1,
         user_type: 'Admin',
         experience: 1000,
@@ -21,7 +21,7 @@ export async function seedUsers() {
         username: 'host_jane',
         email: 'jane@fillmath.com',
         password_hash:
-          '2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3', // SHA-256 of 'host'
+          '$2a$10$Xw0kCGPkrP4hlF5SW5xqsuZxYxDQ3KAIWmaLsqSDlE4KO0u9NZrri', // bycrpt (10) hash of 'host'
         profile_picture: 2,
         user_type: 'Host',
         experience: 10,
@@ -30,7 +30,7 @@ export async function seedUsers() {
         username: 'player_bob',
         email: 'bob@example.com',
         password_hash:
-          '5906ac361a137e2d286465cd6588ebb5ac3f5ae955001100bc41577c3d751764', // SHA-256 of 'player'
+          '$2a$10$qzSaYfZSbmXTA1Nabab12O0kCTjm.GDvSnp64PxVRW.xVkd4CM4hS', // bycrpt (10) hash of 'bob'
         profile_picture: null,
         user_type: 'Player',
         experience: 20,
@@ -39,7 +39,7 @@ export async function seedUsers() {
         username: 'player_alice',
         email: 'alice@example.com',
         password_hash:
-          '5906ac361a137e2d286465cd6588ebb5ac3f5ae955001100bc41577c3d751764', // SHA-256 of 'player'
+          '$2a$10$O3rAObCIyVGnYaPKpS2GOekVb4q5RXBh12zYDcdoo6BvW/i0jIfMa', // bycrpt (10) hash of 'alice'
         profile_picture: 3,
         user_type: 'Player',
         experience: 40,
