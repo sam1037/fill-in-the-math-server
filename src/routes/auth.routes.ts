@@ -139,4 +139,51 @@ router.route('/logout').get((req: Request, res: Response) => {
   }
 });
 
+// Get current user data
+router.route('/user').get(async (req: Request, res: Response) => {
+  try {
+    // Check if user is logged in
+    if (!req.session.userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Not authenticated',
+      });
+      return;
+    }
+
+    // Fetch user data from database
+    const user = await UserService.getUserById(req.session.userId);
+
+    if (!user) {
+      // User not found in database (session exists but user was deleted)
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    // Return user data (excluding sensitive information)
+    res.status(200).json({
+      success: true,
+      message: 'User data retrieved successfully',
+      user: {
+        user_id: user.user_id,
+        username: user.username,
+        email: user.email,
+        profile_picture: user.profile_picture,
+        user_type: user.user_type,
+        experience: user.experience,
+        date_registered: user.date_registered,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching user data',
+    });
+  }
+});
+
 export default router;
