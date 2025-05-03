@@ -56,13 +56,14 @@ function generate_number(
       } else {
         // If no proper divisors, change the operation
         selectedOperators[i - 1] = MathSymbol.Addition;
-        numbers.push(Math.floor(Math.random() * 9) + 1);
+        numbers.push(randint(1, 9));
       }
     } else {
-      numbers.push(Math.floor(Math.random() * 9) + 1);
+      numbers.push(randint(1, 9));
     }
   }
-  return numbers;
+  const output: [number[], MathSymbol[]] = [numbers, selectedOperators];
+  return output;
 }
 /**
  * generate math question randomly given difficulty
@@ -87,7 +88,7 @@ export function generateQuestion(difficulty: Difficulty): Question {
   // Generate random operators
   const operators = operator_difficulty_mapping[difficulty];
   const numOperations = num_operation_difficulty_mapping[difficulty];
-  const selectedOperators: MathSymbol[] = []; // storing operator only
+  let selectedOperators: MathSymbol[] = []; // storing operator only
   const id = Math.random().toString(36).substring(2, 9);
 
   for (let i = 0; i < numOperations; i++) {
@@ -116,14 +117,23 @@ export function generateQuestion(difficulty: Difficulty): Question {
     selectedOperators.includes(MathSymbol.Division);
 
   // Generate numbers to use in the equation
-  let numbers: number[] = generate_number(selectedOperators, numOperations);
-
+  let numbers: number[] = [];
+  let generation_result = generate_number(selectedOperators, numOperations);
+  numbers = generation_result[0];
+  selectedOperators = generation_result[1];
   // Calculate the result on right hand side
   let result = calculate_result(numbers, selectedOperators);
 
-  while (!Number.isInteger(result)) {
-    numbers = generate_number(selectedOperators, numOperations);
+  // Regenerate questions if
+  // 1. Numbers contain numbers other than number in [1, 9]
+  let contain_pos_1_digit_only = numbers.every((el) => el >= 1 && el <= 9);
+  // TODO: modify here: disallow case where result >= 10
+  while (!Number.isInteger(result) || !contain_pos_1_digit_only) {
+    generation_result = generate_number(selectedOperators, numOperations);
+    numbers = generation_result[0];
+    selectedOperators = generation_result[1];
     result = calculate_result(numbers, selectedOperators);
+    contain_pos_1_digit_only = numbers.every((el) => el >= 1 && el <= 9);
   }
   // Create the equation array
   const equation_arr: (number | MathSymbol)[] = [numbers[0]];
