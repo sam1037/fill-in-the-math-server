@@ -41,6 +41,7 @@ function generate_number(
 
   for (let i = 0; i < numOperations + 1; i++) {
     // Ensure division operations result in whole numbers
+    let new_number = 0;
     if (i > 0 && selectedOperators[i - 1] === MathSymbol.Division) {
       // Find divisors of the previous number
       const divisors = [];
@@ -52,15 +53,22 @@ function generate_number(
       if (divisors.length > 0) {
         const randomDivisor =
           divisors[Math.floor(Math.random() * divisors.length)];
-        numbers.push(randomDivisor);
+        new_number = randomDivisor;
       } else {
         // If no proper divisors, change the operation
         selectedOperators[i - 1] = MathSymbol.Addition;
-        numbers.push(randint(1, 9));
+        new_number = randint(1, 9);
       }
     } else {
-      numbers.push(randint(1, 9));
+      new_number = randint(1, 9);
     }
+    // if contain duplicate, regenerate a number
+    const contain_duplicate = numbers.includes(new_number);
+    if (contain_duplicate) {
+      i--;
+      continue;
+    }
+    numbers.push(new_number);
   }
   const output: [number[], MathSymbol[]] = [numbers, selectedOperators];
   return output;
@@ -94,13 +102,16 @@ export function generateQuestion(difficulty: Difficulty): Question {
   for (let i = 0; i < numOperations; i++) {
     let randomIndex = randint(operators.length - 1);
 
-    if (
-      difficulty == Difficulty.MEDIUM &&
-      selectedOperators.includes(
-        // eslint-disable-next-line  @typescript-eslint/no-unnecessary-condition
-        MathSymbol.Multiplication || MathSymbol.Division
-      )
-    ) {
+    const include_mul_div = selectedOperators.includes(
+      // eslint-disable-next-line  @typescript-eslint/no-unnecessary-condition
+      MathSymbol.Multiplication || MathSymbol.Division
+    );
+    if (include_mul_div) {
+      randomIndex = randint(0, 1);
+      // if there is mul/div -> remaining operator will be add/subtraction
+    }
+
+    if (difficulty == Difficulty.MEDIUM && include_mul_div) {
       // algorithm: for medium, only 1 operator if multiplication is allowed
       break;
     }
