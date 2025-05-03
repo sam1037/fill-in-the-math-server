@@ -159,7 +159,31 @@ export const UserService = {
     }
   },
 
-  //? do we change the parameter to the entire user obj instead?
+  /**
+   * Get user by ID
+   * @param userId The user ID to fetch
+   * @returns User object without password hash or null if not found
+   */
+  getUserById: async (
+    userId: number
+  ): Promise<Omit<User, 'password_hash'> | null> => {
+    try {
+      const user = await UserRepository.findById(userId);
+
+      if (!user) {
+        return null;
+      }
+
+      // Return user without password_hash using object destructuring
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('Error fetching user by ID:', error);
+      return null;
+    }
+  },
+
   //get the user level from experince
   getUserLevel(experience: number) {
     return calculateLevel(experience);
