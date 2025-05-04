@@ -133,13 +133,19 @@ export function generateQuestion(difficulty: Difficulty): Question {
   // Regenerate questions if
   // 1. Numbers contain numbers other than number in [1, 9]
   let contain_pos_1_digit_only = numbers.every((el) => el >= 1 && el <= 9);
+  let contain_integer_only = numbers.every((el) => Number.isInteger(el));
   // TODO: modify here: disallow case where result >= 10
-  while (!Number.isInteger(result) || !contain_pos_1_digit_only) {
+  while (
+    !Number.isInteger(result) ||
+    !contain_pos_1_digit_only ||
+    !contain_integer_only
+  ) {
     generation_result = generate_number(selectedOperators, numOperations);
     numbers = generation_result[0];
     selectedOperators = generation_result[1];
     result = calculate_result(numbers, selectedOperators);
     contain_pos_1_digit_only = numbers.every((el) => el >= 1 && el <= 9);
+    contain_integer_only = numbers.every((el) => Number.isInteger(el));
   }
 
   const include_mul_div: boolean =
