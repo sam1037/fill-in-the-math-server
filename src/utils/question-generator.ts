@@ -51,8 +51,7 @@ function generate_number(
         }
       }
       if (divisors.length > 0) {
-        const randomDivisor =
-          divisors[Math.floor(Math.random() * divisors.length)];
+        const randomDivisor = divisors[randint(0, divisors.length - 1)];
         new_number = randomDivisor;
       } else {
         // If no proper divisors, change the operation
@@ -123,10 +122,6 @@ export function generateQuestion(difficulty: Difficulty): Question {
     selectedOperators.push(operators[randomIndex]);
   }
 
-  const include_mul_div: boolean =
-    selectedOperators.includes(MathSymbol.Multiplication) ||
-    selectedOperators.includes(MathSymbol.Division);
-
   // Generate numbers to use in the equation
   let numbers: number[] = [];
   let generation_result = generate_number(selectedOperators, numOperations);
@@ -146,6 +141,11 @@ export function generateQuestion(difficulty: Difficulty): Question {
     result = calculate_result(numbers, selectedOperators);
     contain_pos_1_digit_only = numbers.every((el) => el >= 1 && el <= 9);
   }
+
+  const include_mul_div: boolean =
+    selectedOperators.includes(MathSymbol.Multiplication) ||
+    selectedOperators.includes(MathSymbol.Division);
+
   // Create the equation array
   const equation_arr: (number | MathSymbol)[] = [numbers[0]];
   for (let i = 0; i < selectedOperators.length; i++) {
@@ -169,7 +169,6 @@ export function generateQuestion(difficulty: Difficulty): Question {
 
   // Create blanks array with positions and values
   const allPositions = [];
-  const answer: number[] = [];
 
   // Collect all possible positions for blanks (each single digit in the equation)
   let pos = 0;
@@ -185,15 +184,10 @@ export function generateQuestion(difficulty: Difficulty): Question {
   // Randomly select positions for blanks
   const selectedBlankPositions = [];
   for (let i = 0; i < numBlanks; i++) {
-    if (difficulty == Difficulty.MEDIUM && include_mul_div && i >= 1)
-      // if medium and mul div -> only 1 blank
-      break;
     if (allPositions.length > 0) {
       const chosenIndex = randint(allPositions.length - 1);
       const position_index = allPositions[chosenIndex];
       selectedBlankPositions.push(position_index);
-      // Store the answer value (the number that will be replaced with a blank)
-      answer.push(equation_arr[position_index] as number);
       // Replace the number with a blank in the equation
       equation_arr[position_index] = MathSymbol.Blank;
       allPositions.splice(chosenIndex, 1);
