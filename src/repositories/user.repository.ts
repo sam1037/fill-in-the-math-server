@@ -7,7 +7,10 @@ import { QueryResult } from 'pg';
  * Repository for managing User data in the database
  */
 export const UserRepository = {
-  //find all users, return a promise of an array of User(s)
+  /**
+   * Find all users in the database.
+   * @returns {Promise<User[]>} A promise that resolves to an array of User objects.
+   */
   async findAll(): Promise<User[]> {
     const result: QueryResult<User> = await query(
       'SELECT * FROM users ORDER BY user_id',
@@ -19,6 +22,7 @@ export const UserRepository = {
   /**
    * Find a user by ID
    * @param userId The user ID to look up
+   * @returns {Promise<User | null>} The user object if found, or null.
    */
   async findById(userId: number): Promise<User | null> {
     const result: QueryResult<User> = await query(
@@ -31,6 +35,7 @@ export const UserRepository = {
   /**
    * Create a new user
    * @param user The user data to insert
+   * @returns a promise of the user object
    */
   async create(user: CreateUserDto): Promise<User> {
     const result = await query<User>(
@@ -47,7 +52,15 @@ export const UserRepository = {
     return result.rows[0];
   },
 
-  //update an existing user
+  /**
+   * Update an existing user
+   * @param userId The user ID of the user to update
+   * @param updateData The update data, e.g. {
+      username: 'updated_username',
+      profile_picture: 3,
+    }
+   * @returns a promise of user or null
+   */
   async update(
     userId: number,
     updateData: UpdateUserDto
@@ -84,7 +97,11 @@ export const UserRepository = {
     }
   },
 
-  //delete an user by user id
+  /**
+   * Delete an user by user id
+   * @param userId The userID of corresponding user to delete
+   * @returns a promise of a boolean indicating successful or not
+   */
   async delete(userId: number): Promise<boolean> {
     try {
       const result = await pool.query(
@@ -99,7 +116,11 @@ export const UserRepository = {
     }
   },
 
-  //find a user by email
+  /**
+   * find a user by email
+   * @param email The email of the user to find
+   * @returns a promise of user or null
+   */
   async findByEmail(email: string): Promise<User | null> {
     const result: QueryResult<User> = await query(
       'SELECT * FROM users WHERE email = $1',
