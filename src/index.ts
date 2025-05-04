@@ -7,6 +7,7 @@ import express, { Express, Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import session from 'express-session';
+import memorystore from 'memorystore';
 import { setupSocketHandlers } from './socket/socket-handlers.js';
 import authRoutes from './routes/auth.routes.js';
 
@@ -17,6 +18,8 @@ const hostname = process.env.hostname || 'localhost';
 const client_url = process.env.client_url || 'http://localhost:3000';
 
 const app: Express = express();
+// Create MemoryStore
+const MemoryStore = memorystore(session);
 
 // Middleware
 app.use(express.json()); // Parse JSON bodies
@@ -37,8 +40,11 @@ app.use(
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+      maxAge: 86400000, // 24 hours in milliseconds
     },
+    store: new MemoryStore({
+      checkPeriod: 86400000, // Prune expired entries every 24h
+    }),
   })
 );
 
