@@ -41,6 +41,7 @@ function generate_number(
 
   for (let i = 0; i < numOperations + 1; i++) {
     // Ensure division operations result in whole numbers
+    let new_number = 0;
     if (i > 0 && selectedOperators[i - 1] === MathSymbol.Division) {
       // Find divisors of the previous number
       const divisors = [];
@@ -50,19 +51,26 @@ function generate_number(
         }
       }
       if (divisors.length > 0) {
-        const randomDivisor =
-          divisors[Math.floor(Math.random() * divisors.length)];
-        numbers.push(randomDivisor);
+        const randomDivisor = divisors[randint(0, divisors.length - 1)];
+        new_number = randomDivisor;
       } else {
         // If no proper divisors, change the operation
         selectedOperators[i - 1] = MathSymbol.Addition;
-        numbers.push(Math.floor(Math.random() * 9) + 1);
+        new_number = randint(1, 9);
       }
     } else {
-      numbers.push(Math.floor(Math.random() * 9) + 1);
+      new_number = randint(1, 9);
     }
+    // if contain duplicate, regenerate a number
+    const contain_duplicate = numbers.includes(new_number);
+    if (contain_duplicate) {
+      i--;
+      continue;
+    }
+    numbers.push(new_number);
   }
-  return numbers;
+  const output: [number[], MathSymbol[]] = [numbers, selectedOperators];
+  return output;
 }
 /**
  * generate math question randomly given difficulty
@@ -87,19 +95,22 @@ export function generateQuestion(difficulty: Difficulty): Question {
   // Generate random operators
   const operators = operator_difficulty_mapping[difficulty];
   const numOperations = num_operation_difficulty_mapping[difficulty];
-  const selectedOperators: MathSymbol[] = []; // storing operator only
+  let selectedOperators: MathSymbol[] = []; // storing operator only
   const id = Math.random().toString(36).substring(2, 9);
 
   for (let i = 0; i < numOperations; i++) {
     let randomIndex = randint(operators.length - 1);
 
-    if (
-      difficulty == Difficulty.MEDIUM &&
-      selectedOperators.includes(
-        // eslint-disable-next-line  @typescript-eslint/no-unnecessary-condition
-        MathSymbol.Multiplication || MathSymbol.Division
-      )
-    ) {
+    const include_mul_div = selectedOperators.includes(
+      // eslint-disable-next-line  @typescript-eslint/no-unnecessary-condition
+      MathSymbol.Multiplication || MathSymbol.Division
+    );
+    if (include_mul_div) {
+      randomIndex = randint(0, 1);
+      // if there is mul/div -> remaining operator will be add/subtraction
+    }
+
+    if (difficulty == Difficulty.MEDIUM && include_mul_div) {
       // algorithm: for medium, only 1 operator if multiplication is allowed
       break;
     }
@@ -111,20 +122,36 @@ export function generateQuestion(difficulty: Difficulty): Question {
     selectedOperators.push(operators[randomIndex]);
   }
 
+  // Generate numbers to use in the equation
+  let numbers: number[] = [];
+  let generation_result = generate_number(selectedOperators, numOperations);
+  numbers = generation_result[0];
+  selectedOperators = generation_result[1];
+  // Calculate the result on right hand side
+  let result = calculate_result(numbers, selectedOperators);
+
+  // Regenerate questions if
+  // 1. Numbers contain numbers other than number in [1, 9]
+  let contain_pos_1_digit_only = numbers.every((el) => el >= 1 && el <= 9);
+  let contain_integer_only = numbers.every((el) => Number.isInteger(el));
+  // TODO: modify here: disallow case where result >= 10
+  while (
+    !Number.isInteger(result) ||
+    !contain_pos_1_digit_only ||
+    !contain_integer_only
+  ) {
+    generation_result = generate_number(selectedOperators, numOperations);
+    numbers = generation_result[0];
+    selectedOperators = generation_result[1];
+    result = calculate_result(numbers, selectedOperators);
+    contain_pos_1_digit_only = numbers.every((el) => el >= 1 && el <= 9);
+    contain_integer_only = numbers.every((el) => Number.isInteger(el));
+  }
+
   const include_mul_div: boolean =
     selectedOperators.includes(MathSymbol.Multiplication) ||
     selectedOperators.includes(MathSymbol.Division);
 
-  // Generate numbers to use in the equation
-  let numbers: number[] = generate_number(selectedOperators, numOperations);
-
-  // Calculate the result on right hand side
-  let result = calculate_result(numbers, selectedOperators);
-
-  while (!Number.isInteger(result)) {
-    numbers = generate_number(selectedOperators, numOperations);
-    result = calculate_result(numbers, selectedOperators);
-  }
   // Create the equation array
   const equation_arr: (number | MathSymbol)[] = [numbers[0]];
   for (let i = 0; i < selectedOperators.length; i++) {
@@ -148,7 +175,6 @@ export function generateQuestion(difficulty: Difficulty): Question {
 
   // Create blanks array with positions and values
   const allPositions = [];
-  const answer: number[] = [];
 
   // Collect all possible positions for blanks (each single digit in the equation)
   let pos = 0;
@@ -164,15 +190,10 @@ export function generateQuestion(difficulty: Difficulty): Question {
   // Randomly select positions for blanks
   const selectedBlankPositions = [];
   for (let i = 0; i < numBlanks; i++) {
-    if (difficulty == Difficulty.MEDIUM && include_mul_div && i >= 1)
-      // if medium and mul div -> only 1 blank
-      break;
     if (allPositions.length > 0) {
       const chosenIndex = randint(allPositions.length - 1);
       const position_index = allPositions[chosenIndex];
       selectedBlankPositions.push(position_index);
-      // Store the answer value (the number that will be replaced with a blank)
-      answer.push(equation_arr[position_index] as number);
       // Replace the number with a blank in the equation
       equation_arr[position_index] = MathSymbol.Blank;
       allPositions.splice(chosenIndex, 1);
