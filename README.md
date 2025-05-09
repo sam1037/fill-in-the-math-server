@@ -4,18 +4,20 @@ Welcome to Fill in the math, an online arithmetic battle royale created by Group
 ## Hosting
 1. Clone Repository  
 ```bash
-git clone 
+git clone https://github.com/listenrwt/fill-in-the-math-server.git
 ```  
   
 
 2. Navigate to project folder  
 ```bash
-cd <project-folder-name>
+cd fill-in-the-math-server
 ```
   
 
 3. Install dependencies using yarn  
 ```bash
+npm install
+# or
 yarn install
 ```
   
