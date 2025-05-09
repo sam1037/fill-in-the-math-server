@@ -64,8 +64,8 @@ Good Luck, Have Fun!
 
 
 ## Credits
-https://github.com/sam1037  
-https://github.com/jacksonhk  
-https://github.com/listenrwt  
-https://github.com/kamingkwok2015  
-https://github.com/jonathanc1002  
+Sam [github](https://github.com/sam1037)  
+Jackson [github](https://github.com/jacksonhk)  
+Winter [github](https://github.com/listenrwt)  
+Ming [github](https://github.com/kamingkwok2015)  
+Jonathan [github](https://github.com/jonathanc1002)
