@@ -4,6 +4,9 @@ import { broadcastRoomUpdate, endGame } from '../../utils/game-logic.js';
 import { rooms, playerRooms, playerTimers } from '../../state/game-state.js';
 import { Player, RoomStatus } from '../../types/game.types.js';
 
+// Import the roomTimers map from game-logic
+import { roomTimers } from '../../state/game-state.js';
+
 export const setupConnectionHandlers = (io: Server, socket: Socket) => {
   // Handle disconnections
   socket.on('disconnect', () => {
@@ -35,8 +38,13 @@ export const setupConnectionHandlers = (io: Server, socket: Socket) => {
           playerId: socket.id,
         });
 
-        // If room is empty, delete it
+        // If room is empty, delete it and clean up all related resources
         if (room.players.length === 0) {
+          // Clear room timer if exists
+          if (roomTimers.has(roomId)) {
+            clearInterval(roomTimers.get(roomId)!);
+            roomTimers.delete(roomId);
+          }
           rooms.delete(roomId);
         } else {
           // Check if game is over
@@ -54,7 +62,11 @@ export const setupConnectionHandlers = (io: Server, socket: Socket) => {
         }
       }
 
+      // Remove player from room mapping
       playerRooms.delete(socket.id);
     }
+
+    // Remove all listeners for this socket to prevent memory leaks
+    socket.removeAllListeners();
   });
 };

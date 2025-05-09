@@ -1,7 +1,12 @@
 import { Server } from 'socket.io';
 import { Player, Room, RoomConfig, RoomStatus } from '../types/game.types.js';
 import { endGame } from '../utils/game-logic.js';
-import { rooms, playerRooms, playerTimers } from '../state/game-state.js';
+import {
+  rooms,
+  playerRooms,
+  playerTimers,
+  roomTimers,
+} from '../state/game-state.js';
 import { Difficulty } from '../types/question.enum.js';
 
 export const createRoom = (
@@ -78,42 +83,53 @@ export const joinRoom = (
 };
 
 export const leaveRoom = (socketId: string, io: Server) => {
-  const roomId = playerRooms.get(socketId);
-  if (!roomId) return null;
+  try {
+    const roomId = playerRooms.get(socketId);
+    if (!roomId) return null;
 
-  const room = rooms.get(roomId);
-  if (!room) return null;
+    const room = rooms.get(roomId);
+    if (!room) return null;
 
-  // Remove player from room
-  room.players = room.players.filter((p: Player) => p.id !== socketId);
+    // Remove player from room
+    room.players = room.players.filter((p: Player) => p.id !== socketId);
 
-  // If host leaves, assign a new host or delete the room
-  if (socketId === room.hostId) {
-    if (room.players.length > 0) {
-      room.hostId = room.players[0].id;
-      room.players[0].isHost = true;
-    } else {
-      rooms.delete(roomId);
+    // If host leaves, assign a new host or delete the room
+    if (socketId === room.hostId) {
+      if (room.players.length > 0) {
+        room.hostId = room.players[0].id;
+        room.players[0].isHost = true;
+      } else {
+        // Clear room timer if it exists
+        if (roomTimers.has(roomId)) {
+          clearInterval(roomTimers.get(roomId)!);
+          roomTimers.delete(roomId);
+        }
+
+        rooms.delete(roomId);
+      }
     }
-  }
 
-  playerRooms.delete(socketId);
+    playerRooms.delete(socketId);
 
-  // Stop player timer if exists
-  if (playerTimers.has(socketId)) {
-    clearInterval(playerTimers.get(socketId)!);
-    playerTimers.delete(socketId);
-  }
-
-  // Check if game is over for remaining players
-  if (rooms.has(roomId) && room.status === RoomStatus.IN_PROGRESS) {
-    const alivePlayers = room.players.filter((p: Player) => p.health > 0);
-    if (alivePlayers.length <= 1) {
-      endGame(roomId, io);
+    // Stop player timer if exists
+    if (playerTimers.has(socketId)) {
+      clearInterval(playerTimers.get(socketId)!);
+      playerTimers.delete(socketId);
     }
-  }
 
-  return { roomId, roomStillExists: rooms.has(roomId) };
+    // Check if game is over for remaining players
+    if (rooms.has(roomId) && room.status === RoomStatus.IN_PROGRESS) {
+      const alivePlayers = room.players.filter((p: Player) => p.health > 0);
+      if (alivePlayers.length <= 1) {
+        endGame(roomId, io);
+      }
+    }
+
+    return { roomId, roomStillExists: rooms.has(roomId) };
+  } catch (error) {
+    console.error(`Error in leaveRoom for socket ${socketId}:`, error);
+    return null;
+  }
 };
 
 export const updateRoomSettings = (
@@ -171,48 +187,66 @@ export const quickJoin = (socketId: string, username: string) => {
 };
 
 export const deleteRoom = (socketId: string, roomId: string) => {
-  const room = rooms.get(roomId);
-  if (!room) return null;
+  try {
+    const room = rooms.get(roomId);
+    if (!room) return null;
 
-  // Only the host can delete a room
-  if (socketId !== room.hostId) return 'NOT_HOST';
+    // Only the host can delete a room
+    if (socketId !== room.hostId) return 'NOT_HOST';
 
-  // Remove all players from the room
-  room.players.forEach((player) => {
-    playerRooms.delete(player.id);
-
-    // Stop player timer if exists
-    if (playerTimers.has(player.id)) {
-      clearInterval(playerTimers.get(player.id)!);
-      playerTimers.delete(player.id);
+    // Clear room timer if it exists
+    if (roomTimers.has(roomId)) {
+      clearInterval(roomTimers.get(roomId)!);
+      roomTimers.delete(roomId);
+      console.log(`Cleared room timer for room ${roomId}`);
     }
-  });
 
-  // Delete the room
-  rooms.delete(roomId);
+    // Remove all players from the room
+    room.players.forEach((player) => {
+      playerRooms.delete(player.id);
 
-  return { roomId };
+      // Stop player timer if exists
+      if (playerTimers.has(player.id)) {
+        clearInterval(playerTimers.get(player.id)!);
+        playerTimers.delete(player.id);
+        console.log(`Cleared player timer for player ${player.id}`);
+      }
+    });
+
+    // Delete the room
+    rooms.delete(roomId);
+
+    return { roomId };
+  } catch (error) {
+    console.error(`Error in deleteRoom for room ${roomId}:`, error);
+    return null;
+  }
 };
 
 export const continueGame = (socketId: string, roomId: string) => {
-  const room = rooms.get(roomId);
-  if (!room) return null;
+  try {
+    const room = rooms.get(roomId);
+    if (!room) return null;
 
-  // Only the host can continue the game
-  if (socketId !== room.hostId) return 'NOT_HOST';
+    // Only the host can continue the game
+    if (socketId !== room.hostId) return 'NOT_HOST';
 
-  // Room must be in FINISHED state to continue
-  if (room.status !== RoomStatus.FINISHED) return 'INVALID_STATE';
+    // Room must be in FINISHED state to continue
+    if (room.status !== RoomStatus.FINISHED) return 'INVALID_STATE';
 
-  // Reset player health and scores for a new game
-  room.players.forEach((player) => {
-    player.health = 0;
-    player.score = 0;
-    player.currentQuestionIndex = 0;
-  });
+    // Reset player health and scores for a new game
+    room.players.forEach((player) => {
+      player.health = 0;
+      player.score = 0;
+      player.currentQuestionIndex = 0;
+    });
 
-  // Set the room status back to WAITING
-  room.status = RoomStatus.WAITING;
+    // Set the room status back to WAITING
+    room.status = RoomStatus.WAITING;
 
-  return room;
+    return room;
+  } catch (error) {
+    console.error(`Error in continueGame for room ${roomId}:`, error);
+    return null;
+  }
 };

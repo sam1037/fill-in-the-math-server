@@ -4,3 +4,4 @@ import { Room } from '../types/game.types.js';
 export const rooms: Map<string, Room> = new Map();
 export const playerRooms: Map<string, string> = new Map();
 export const playerTimers: Map<string, NodeJS.Timeout> = new Map();
+export const roomTimers: Map<string, NodeJS.Timeout> = new Map(); // Track room-level timers

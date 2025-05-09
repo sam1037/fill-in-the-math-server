@@ -10,12 +10,51 @@ import session from 'express-session';
 import memorystore from 'memorystore';
 import { setupSocketHandlers } from './socket/socket-handlers.js';
 import authRoutes from './routes/auth.routes.js';
+import { playerTimers, roomTimers } from './state/game-state.js';
 
 dotenv.config();
+
+// Global error handlers to prevent server crashes
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  // Don't exit the process, just log the error
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit the process, just log the error
+});
 
 const port = process.env.PORT || 3001; // Changed default to 3001 to avoid conflict with Next.js
 const hostname = process.env.hostname || 'localhost';
 const client_url = process.env.client_url || 'http://localhost:3000';
+
+// Clean up function to clear all timers on server restart
+const cleanupOnRestart = () => {
+  console.log('Cleaning up timers before server exit...');
+  // Clear all player timers
+  for (const timer of playerTimers.values()) {
+    clearInterval(timer);
+  }
+  playerTimers.clear();
+
+  // Clear all room timers
+  for (const timer of roomTimers.values()) {
+    clearInterval(timer);
+  }
+  roomTimers.clear();
+};
+
+// Register cleanup handlers
+process.on('SIGINT', () => {
+  cleanupOnRestart();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  cleanupOnRestart();
+  process.exit(0);
+});
 
 const app: Express = express();
 // Create MemoryStore
