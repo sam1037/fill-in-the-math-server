@@ -30,6 +30,7 @@ export interface Room {
 export interface Player {
   id: string;
   username: string;
+  avatarId?: number;
   health: number;
   score: number;
   currentQuestionIndex: number;

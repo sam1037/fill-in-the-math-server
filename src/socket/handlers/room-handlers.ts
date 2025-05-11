@@ -26,6 +26,7 @@ export const setupRoomHandlers = (io: Server, socket: Socket) => {
       socket.id,
       data.username,
       data.roomName,
+      data.avatarId,
       data.config
     );
 
@@ -42,7 +43,12 @@ export const setupRoomHandlers = (io: Server, socket: Socket) => {
   });
 
   socket.on(RoomEvents.JOIN_ROOM, (data: JoinRoomRequest) => {
-    const result = joinRoom(socket.id, data.roomId, data.username);
+    const result = joinRoom(
+      socket.id,
+      data.roomId,
+      data.username,
+      data.avatarId
+    );
 
     if (!result) {
       return socket.emit(ConnectionEvents.ERROR, {
@@ -87,7 +93,7 @@ export const setupRoomHandlers = (io: Server, socket: Socket) => {
   });
 
   socket.on(RoomEvents.QUICK_JOIN, (data: QuickJoinRequest) => {
-    const result = quickJoin(socket.id, data.username);
+    const result = quickJoin(socket.id, data.username, data.avatarId);
 
     if (!result) {
       return socket.emit(RoomEvents.NO_ROOMS_AVAILABLE, {

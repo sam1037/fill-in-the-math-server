@@ -13,6 +13,7 @@ export const createRoom = (
   socketId: string,
   username: string,
   roomName: string,
+  avatarId?: number,
   config?: {
     timeLimit?: number;
     Difficulty?: Difficulty;
@@ -27,6 +28,7 @@ export const createRoom = (
   const player: Player = {
     id: socketId,
     username,
+    avatarId: avatarId || 1, // Default to 1 if not provided
     health: 0,
     score: 0,
     currentQuestionIndex: 0,
@@ -59,7 +61,8 @@ export const createRoom = (
 export const joinRoom = (
   socketId: string,
   roomId: string,
-  username: string
+  username: string,
+  avatarId?: number
 ) => {
   const room = rooms.get(roomId);
   if (!room) return null;
@@ -70,6 +73,7 @@ export const joinRoom = (
   const player: Player = {
     id: socketId,
     username,
+    avatarId: avatarId || 1, // Default to 1 if not provided
     health: 0,
     score: 0,
     currentQuestionIndex: 0,
@@ -148,7 +152,11 @@ export const updateRoomSettings = (
   return room;
 };
 
-export const quickJoin = (socketId: string, username: string) => {
+export const quickJoin = (
+  socketId: string,
+  username: string,
+  avatarId?: number
+) => {
   // Create an array of all available public rooms
   const availableRooms: Room[] = [];
 
@@ -183,7 +191,7 @@ export const quickJoin = (socketId: string, username: string) => {
   const roomToJoin = availableRooms[0];
 
   // Join the room using the existing joinRoom function
-  return joinRoom(socketId, roomToJoin.id, username);
+  return joinRoom(socketId, roomToJoin.id, username, avatarId);
 };
 
 export const deleteRoom = (socketId: string, roomId: string) => {
