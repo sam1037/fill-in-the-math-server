@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { RoomEvents } from '../../events/events.js';
+import { ConnectionEvents, RoomEvents } from '../../events/events.js';
 import { broadcastRoomUpdate, endGame } from '../../utils/game-logic.js';
 import { rooms, playerRooms, playerTimers } from '../../state/game-state.js';
 import { Player, RoomStatus } from '../../types/game.types.js';
@@ -8,9 +8,27 @@ import { Player, RoomStatus } from '../../types/game.types.js';
 import { roomTimers } from '../../state/game-state.js';
 
 export const setupConnectionHandlers = (io: Server, socket: Socket) => {
+  // Ping/pong to check connection health
+  let pingInterval = setInterval(() => {
+    const start = Date.now();
+    socket.emit('server:ping', start);
+  }, 30000); // Every 30 seconds
+
+  socket.on('client:pong', (startTime: number) => {
+    const latency = Date.now() - startTime;
+
+    // If latency is too high, log it
+    if (latency > 1000) {
+      console.warn(
+        `High latency (${latency}ms) detected for socket ${socket.id}`
+      );
+    }
+  });
+
   // Handle disconnections
   socket.on('disconnect', () => {
     console.log(`Server: user disconnected: ${socket.id}`);
+    clearInterval(pingInterval);
 
     const roomId = playerRooms.get(socket.id);
     if (roomId) {
@@ -68,5 +86,14 @@ export const setupConnectionHandlers = (io: Server, socket: Socket) => {
 
     // Remove all listeners for this socket to prevent memory leaks
     socket.removeAllListeners();
+  });
+
+  // Handle errors
+  socket.on('error', (error) => {
+    console.error(`Socket error for ${socket.id}:`, error);
+    socket.emit(ConnectionEvents.ERROR, {
+      timestamp: Date.now(),
+      error: 'Connection error occurred',
+    });
   });
 };

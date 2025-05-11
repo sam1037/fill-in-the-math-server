@@ -14,6 +14,33 @@ import { playerTimers, roomTimers } from './state/game-state.js';
 
 dotenv.config();
 
+// Memory usage tracking function
+const trackMemoryUsage = (label = 'Memory Usage') => {
+  const memUsage = process.memoryUsage();
+  console.log(
+    `${label}: ${JSON.stringify({
+      rss: `${Math.round(memUsage.rss / 1024 / 1024)} MB`,
+      heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)} MB`,
+      heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)} MB`,
+      external: `${Math.round(memUsage.external / 1024 / 1024)} MB`,
+      arrayBuffers: `${Math.round(memUsage.arrayBuffers / 1024 / 1024)} MB`,
+    })}`
+  );
+
+  // Enable explicit garbage collection if v8 flags are set
+  if (global.gc) {
+    try {
+      global.gc();
+      console.log('Manual garbage collection executed');
+    } catch (e) {
+      console.error('Failed to run manual garbage collection', e);
+    }
+  }
+};
+
+// Initial memory tracking interval (will be replaced by memory-manager)
+let memoryTrackingInterval: NodeJS.Timeout | null = null;
+
 // Global error handlers to prevent server crashes
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
@@ -31,7 +58,7 @@ const client_url = process.env.client_url || 'http://localhost:3000';
 
 // Clean up function to clear all timers on server restart
 const cleanupOnRestart = () => {
-  console.log('Cleaning up timers before server exit...');
+  console.log('Cleaning up resources before server exit...');
   // Clear all player timers
   for (const timer of playerTimers.values()) {
     clearInterval(timer);
@@ -43,6 +70,21 @@ const cleanupOnRestart = () => {
     clearInterval(timer);
   }
   roomTimers.clear();
+
+  // Clear memory tracking interval if it exists
+  if (memoryTrackingInterval) {
+    clearInterval(memoryTrackingInterval);
+  }
+
+  // Force a final garbage collection if available
+  if (global.gc) {
+    try {
+      global.gc();
+      console.log('Final garbage collection executed');
+    } catch (e) {
+      console.error('Failed to run final garbage collection', e);
+    }
+  }
 };
 
 // Register cleanup handlers
@@ -97,6 +139,8 @@ const io = new Server(httpServer, {
     methods: ['GET', 'POST'],
     origin: [client_url, 'https://admin.socket.io', 'http://localhost:3000'],
   },
+  perMessageDeflate: false, // Disable WebSocket compression
+  maxHttpBufferSize: 9e999999, // Increase max buffer size
 });
 
 // Setup socket handlers
@@ -111,6 +155,42 @@ instrument(io, {
 // API routes
 app.get('/', (req: Request, res: Response) => {
   res.send('Fill-in-the-Math Game Server');
+});
+
+// Memory usage endpoint
+app.get('/api/memory', (req: Request, res: Response) => {
+  const memUsage = process.memoryUsage();
+  res.json({
+    rss: Math.round(memUsage.rss / 1024 / 1024),
+    heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+    heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+    external: Math.round(memUsage.external / 1024 / 1024),
+    arrayBuffers: Math.round(memUsage.arrayBuffers / 1024 / 1024),
+    units: 'MB',
+  });
+});
+
+// Server health check endpoint
+app.get('/api/health', (req: Request, res: Response) => {
+  const memUsage = process.memoryUsage();
+  const uptime = process.uptime();
+
+  res.json({
+    status: 'ok',
+    uptime: {
+      seconds: Math.floor(uptime),
+      formatted: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`,
+    },
+    memory: {
+      rss: Math.round(memUsage.rss / 1024 / 1024),
+      heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+      units: 'MB',
+    },
+    activePlayers: playerTimers.size,
+    activeRooms: roomTimers.size,
+    timestamp: Date.now(),
+  });
 });
 
 // Auth routes
@@ -129,4 +209,7 @@ httpServer
   })
   .listen(port, () => {
     console.log(`> Ready on http://${hostname}:${port}`);
+    trackMemoryUsage('Initial Memory Usage'); // Log initial memory usage
+
+    console.log('Server optimization systems initialized');
   });

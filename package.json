@@ -7,6 +7,8 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx --watch --env-file .env src/index.ts",
     "start": "node --env-file .env dist/src/index.js",
+    "start:optimized": "./scripts/start-optimized.sh",
+    "start:gc": "node --expose-gc --max-old-space-size=2048 --env-file .env dist/src/index.js",
     "lint": "eslint",
     "check-types": "tsc -p tsconfig.json --noEmit",
     "check-format": "prettier --ignore-path .gitignore --check **/*.{js,jsx,ts,tsx,json,css}",
@@ -16,7 +18,8 @@
     "test": "jest",
     "test-in-band": "jest --runInBand",
     "db:setup": "npx tsx src/database/setup.ts",
-    "db:seed": "npx tsx src/database/seed.ts"
+    "db:seed": "npx tsx src/database/seed.ts",
+    "monitor": "node --expose-gc --env-file .env dist/src/index.js"
   },
   "keywords": [],
   "author": "",

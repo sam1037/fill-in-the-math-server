@@ -2,7 +2,6 @@
 // ? why not placed under User?
 export type UserType = 'Player' | 'Host' | 'Admin';
 
-//? what is interface?
 // User model interface
 export interface User {
   user_id: number;

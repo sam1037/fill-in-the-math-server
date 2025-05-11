@@ -30,12 +30,14 @@ export interface Room {
 export interface Player {
   id: string;
   username: string;
+  avatarId?: number;
   health: number;
   score: number;
   currentQuestionIndex: number;
   isHost: boolean;
   currentQuestion?: Question;
   canPerformAction?: boolean;
+  eliminationTime?: number; // Timestamp when player was eliminated
 }
 
 // Question related interfaces

@@ -139,6 +139,213 @@ router.route('/logout').get((req: Request, res: Response) => {
   }
 });
 
+// Change username
+router.route('/change-username').post(async (req: Request, res: Response) => {
+  try {
+    const { userId, newUsername } = req.body;
+
+    if (!userId) {
+      res.status(400).json({
+        success: false,
+        message: 'User ID is required',
+      });
+      return;
+    }
+
+    if (!newUsername) {
+      res.status(400).json({
+        success: false,
+        message: 'New username is required',
+      });
+      return;
+    }
+
+    // Call service to change username
+    const result = await UserService.changeUsername(userId, newUsername);
+
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Failed to update username',
+      });
+    }
+  } catch (error) {
+    console.error('Error changing username:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while changing username',
+    });
+  }
+});
+
+// Change avatar
+router.route('/change-avatar').post(async (req: Request, res: Response) => {
+  try {
+    const { userId, newAvatarId } = req.body;
+
+    if (!userId) {
+      res.status(400).json({
+        success: false,
+        message: 'User ID is required',
+      });
+      return;
+    }
+
+    if (newAvatarId === undefined || newAvatarId === null) {
+      res.status(400).json({
+        success: false,
+        message: 'New avatar ID is required',
+      });
+      return;
+    }
+
+    // Call service to change avatar
+    const result = await UserService.changeAvatar(userId, newAvatarId);
+
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Failed to update avatar',
+      });
+    }
+  } catch (error) {
+    console.error('Error changing avatar:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while changing avatar',
+    });
+  }
+});
+
+// Reset password
+router.route('/reset-password').post(async (req: Request, res: Response) => {
+  try {
+    const { userId, currentPassword, newPassword } = req.body;
+
+    if (!userId) {
+      res.status(400).json({
+        success: false,
+        message: 'User ID is required',
+      });
+      return;
+    }
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required',
+      });
+      return;
+    }
+
+    // Call service to reset password
+    const result = await UserService.resetPassword(
+      userId,
+      currentPassword,
+      newPassword
+    );
+
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Failed to reset password',
+      });
+    }
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while resetting password',
+    });
+  }
+});
+
+// Delete account
+router.route('/delete-account').post(async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      res.status(400).json({
+        success: false,
+        message: 'User ID is required',
+      });
+      return;
+    }
+
+    // Call service to delete account
+    const result = await UserService.deleteAccount(userId);
+
+    if (result.success) {
+      // Clear session on successful account deletion
+      req.session.destroy((err) => {
+        if (err) {
+          console.error(
+            'Error destroying session after account deletion:',
+            err
+          );
+        }
+        res.clearCookie('connect.sid');
+        res.status(200).json(result);
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Failed to delete account',
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting account',
+    });
+  }
+});
+
+// Find user by email
+router.route('/find-by-email').get(async (req: Request, res: Response) => {
+  try {
+    // Check if user is authenticated
+    const { email } = req.query;
+
+    if (!email || typeof email !== 'string') {
+      res.status(400).json({
+        success: false,
+        message: 'Email is required',
+      });
+      return;
+    }
+
+    // Call service to find user by email
+    const user = await UserService.findByEmail(email);
+    if (user) {
+      res.status(200).json({
+        success: true,
+        message: 'User found',
+        user,
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+  } catch (error) {
+    console.error('Error finding user by email:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while finding user',
+    });
+  }
+});
+
 // Get current user data
 router.route('/user').get(async (req: Request, res: Response) => {
   try {

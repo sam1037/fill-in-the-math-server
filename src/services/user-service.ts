@@ -103,6 +103,30 @@ export const UserService = {
   },
 
   /**
+   * Find a user by email
+   * @param email The email to search for
+   * @returns The user object if found (without password hash), or null
+   */
+  findByEmail: async (
+    email: string
+  ): Promise<Omit<User, 'password_hash'> | null> => {
+    try {
+      const user = await UserRepository.findByEmail(email);
+      if (!user) {
+        return null;
+      }
+
+      // Return user without password_hash
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('Error finding user by email:', error);
+      return null;
+    }
+  },
+
+  /**
    * Register a new user
    * @param registrationData The email, username (can be non unique), and password for registration
    * @returns Success status and message as a json
@@ -223,6 +247,252 @@ export const UserService = {
     } catch (error) {
       console.error('Error during user registration:', error);
       return null;
+    }
+  },
+
+  /**
+   * Change a user's username
+   * @param userId The ID of the user
+   * @param newUsername The new username
+   * @returns Success status and message, with updated user data if successful
+   */
+  async changeUsername(
+    userId: number,
+    newUsername: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    user?: Omit<User, 'password_hash'>;
+  }> {
+    try {
+      // Input validation
+      if (!newUsername || newUsername.trim() === '') {
+        return {
+          success: false,
+          message: 'Username cannot be empty',
+        };
+      }
+
+      // Check if user exists
+      const user = await UserRepository.findById(userId);
+      if (!user) {
+        return {
+          success: false,
+          message: 'User not found',
+        };
+      }
+
+      // Update the username
+      const update: UpdateUserDto = {
+        username: newUsername,
+      };
+
+      const updatedUser = await UserRepository.update(userId, update);
+
+      if (!updatedUser) {
+        return {
+          success: false,
+          message: 'Failed to update username',
+        };
+      }
+
+      // Return success with user data (excluding password hash)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash, ...userWithoutPassword } = updatedUser;
+
+      return {
+        success: true,
+        message: 'Username updated successfully',
+        user: userWithoutPassword,
+      };
+    } catch (error) {
+      console.error('Error changing username:', error);
+      return {
+        success: false,
+        message: 'An error occurred while updating the username',
+      };
+    }
+  },
+
+  /**
+   * Change a user's avatar (profile picture)
+   * @param userId The ID of the user
+   * @param newAvatarId The new avatar ID
+   * @returns Success status and message, with updated user data if successful
+   */
+  async changeAvatar(
+    userId: number,
+    newAvatarId: number
+  ): Promise<{
+    success: boolean;
+    message: string;
+    user?: Omit<User, 'password_hash'>;
+  }> {
+    try {
+      // Input validation
+      if (newAvatarId === undefined || newAvatarId === null) {
+        return {
+          success: false,
+          message: 'Avatar ID is required',
+        };
+      }
+
+      // Check if user exists
+      const user = await UserRepository.findById(userId);
+      if (!user) {
+        return {
+          success: false,
+          message: 'User not found',
+        };
+      }
+
+      // Update the avatar
+      const update: UpdateUserDto = {
+        profile_picture: newAvatarId,
+      };
+
+      const updatedUser = await UserRepository.update(userId, update);
+
+      if (!updatedUser) {
+        return {
+          success: false,
+          message: 'Failed to update avatar',
+        };
+      }
+
+      // Return success with user data (excluding password hash)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash, ...userWithoutPassword } = updatedUser;
+
+      return {
+        success: true,
+        message: 'Avatar updated successfully',
+        user: userWithoutPassword,
+      };
+    } catch (error) {
+      console.error('Error changing avatar:', error);
+      return {
+        success: false,
+        message: 'An error occurred while updating the avatar',
+      };
+    }
+  },
+
+  /**
+   * Reset a user's password
+   * @param userId The ID of the user
+   * @param currentPassword The current password for verification
+   * @param newPassword The new password
+   * @returns Success status and message
+   */
+  async resetPassword(
+    userId: number,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    try {
+      // Input validation
+      if (!currentPassword || !newPassword) {
+        return {
+          success: false,
+          message: 'Current password and new password are required',
+        };
+      }
+
+      // Check if user exists
+      const user = await UserRepository.findById(userId);
+      if (!user) {
+        return {
+          success: false,
+          message: 'User not found',
+        };
+      }
+
+      // Verify current password
+      const passwordMatches = await compare(
+        currentPassword,
+        user.password_hash
+      );
+
+      if (!passwordMatches) {
+        return {
+          success: false,
+          message: 'Current password is incorrect',
+        };
+      }
+
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update the password
+      const update: UpdateUserDto = {
+        password_hash: hashedPassword,
+      };
+
+      const updatedUser = await UserRepository.update(userId, update);
+
+      if (!updatedUser) {
+        return {
+          success: false,
+          message: 'Failed to update password',
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Password reset successfully',
+      };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      return {
+        success: false,
+        message: 'An error occurred while resetting the password',
+      };
+    }
+  },
+
+  /**
+   * Delete a user account
+   * @param userId The ID of the user to delete
+   * @returns Success status and message
+   */
+  async deleteAccount(userId: number): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    try {
+      // Check if user exists
+      const user = await UserRepository.findById(userId);
+      if (!user) {
+        return {
+          success: false,
+          message: 'User not found',
+        };
+      }
+
+      // Delete the user
+      const deleted = await UserRepository.delete(userId);
+
+      if (!deleted) {
+        return {
+          success: false,
+          message: 'Failed to delete account',
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Account deleted successfully',
+      };
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      return {
+        success: false,
+        message: 'An error occurred while deleting the account',
+      };
     }
   },
 };

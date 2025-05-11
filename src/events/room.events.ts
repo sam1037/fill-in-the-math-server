@@ -4,12 +4,14 @@ import { BaseSocketMessage, Room, RoomConfig } from '../types/game.types.js';
 export interface CreateRoomRequest extends BaseSocketMessage {
   username: string;
   roomName: string;
+  avatarId?: number;
   config?: Partial<RoomConfig>;
 }
 
 export interface JoinRoomRequest extends BaseSocketMessage {
   username: string;
   roomId: string;
+  avatarId?: number;
 }
 
 export interface LeaveRoomRequest extends BaseSocketMessage {
@@ -31,6 +33,7 @@ export interface UpdateSettingsRequest extends BaseSocketMessage {
 
 export interface QuickJoinRequest extends BaseSocketMessage {
   username: string;
+  avatarId?: number;
 }
 
 // Response payloads
