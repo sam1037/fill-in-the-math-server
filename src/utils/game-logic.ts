@@ -4,8 +4,22 @@ import { RoomStatus } from '../types/game.types.js';
 import { rooms, playerTimers, roomTimers } from '../state/game-state.js';
 import { generateQuestion } from './question-generator.js';
 
+// Throttle health updates per room
+const healthUpdateTimestamps: Record<string, number> = {};
+const HEALTH_UPDATE_THROTTLE_MS = 300; // Only send health update at most every 300ms per room
+
 // Helper function to send health updates for all players in a room
 export const sendHealthUpdates = (roomId: string, io: Server) => {
+  const now = Date.now();
+  if (
+    healthUpdateTimestamps[roomId] &&
+    now - healthUpdateTimestamps[roomId] < HEALTH_UPDATE_THROTTLE_MS
+  ) {
+    // Throttled: skip this update
+    return;
+  }
+  healthUpdateTimestamps[roomId] = now;
+
   const room = rooms.get(roomId);
   if (!room) return;
 
@@ -17,7 +31,7 @@ export const sendHealthUpdates = (roomId: string, io: Server) => {
 
   // Send a single health update with all players' health
   io.to(roomId).emit(GameEvents.HEALTH_UPDATED, {
-    timestamp: Date.now(),
+    timestamp: now,
     updates: healthUpdates,
   });
 };
@@ -45,10 +59,11 @@ export const startRoomTimer = (roomId: string, io: Server) => {
       // Reduce health for all active players at once
       room.players.forEach((player) => {
         if (player.health > 0) {
-          player.health -= 1;
-
-          // Check if player is eliminated
+          player.health -= 1; // Check if player is eliminated
           if (player.health <= 0) {
+            // Record elimination time for ranking purposes
+            player.eliminationTime = Date.now();
+
             // Notify all players about elimination
             io.to(roomId).emit(GameEvents.PLAYER_ELIMINATED, {
               timestamp: Date.now(),
@@ -94,31 +109,45 @@ export const endGame = (roomId: string, io: Server) => {
       }
     });
 
-    // Generate leaderboard
-    const leaderboard = room.players
+    // Last player standing (player who wasn't eliminated) gets rank 1
+    // Other players ranked by elimination time (later elimination = better rank)
+
+    // First, separate players into alive and eliminated groups
+    const alivePlayers = room.players.filter((player) => player.health > 0);
+    const eliminatedPlayers = room.players.filter(
+      (player) => player.health <= 0
+    );
+
+    // Sort eliminated players by elimination time (latest first)
+    const sortedEliminated = eliminatedPlayers
+      .sort((a, b) => (b.eliminationTime || 0) - (a.eliminationTime || 0))
       .map((player) => ({
         playerId: player.id,
         username: player.username,
         score: player.score,
         rank: 0,
-      }))
-      .sort((a, b) => b.score - a.score);
+      }));
+
+    // Add alive players at the beginning (rank 1)
+    const leaderboard = [
+      ...alivePlayers.map((player) => ({
+        playerId: player.id,
+        username: player.username,
+        score: player.score,
+        rank: 0,
+      })),
+      ...sortedEliminated,
+    ];
 
     // Assign ranks
     leaderboard.forEach((entry, index) => {
       entry.rank = index + 1;
     });
 
-    // Check for tied scores - if all players have the same score, there's no winner
+    // Winner is the player with rank 1
     let winner = '';
     if (leaderboard.length > 0) {
-      const topScore = leaderboard[0].score;
-      const allTied = leaderboard.every((entry) => entry.score === topScore);
-
-      // Only set a winner if not everyone is tied
-      if (!allTied) {
-        winner = leaderboard[0].playerId;
-      }
+      winner = leaderboard[0].playerId;
     }
 
     // Update room status
@@ -189,10 +218,11 @@ export const applyWrongAnswerPenalty = (
     if (player.health < 0) player.health = 0;
 
     // Broadcast health update to all players in the room using the helper function
-    sendHealthUpdates(roomId, io);
-
-    // Check if player is eliminated
+    sendHealthUpdates(roomId, io); // Check if player is eliminated
     if (player.health <= 0) {
+      // Record elimination time for ranking purposes
+      player.eliminationTime = Date.now();
+
       // Notify all players about elimination
       io.to(roomId).emit(GameEvents.PLAYER_ELIMINATED, {
         timestamp: Date.now(),

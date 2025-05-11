@@ -9,3 +9,17 @@ export interface RegisterRequest {
   username: string;
   password: string;
 }
+
+export interface PasswordResetRequest {
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface UsernameUpdateRequest {
+  newUsername: string;
+}
+
+export interface AvatarUpdateRequest {
+  newAvatarId: number;
+}

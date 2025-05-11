@@ -37,6 +37,7 @@ export interface Player {
   isHost: boolean;
   currentQuestion?: Question;
   canPerformAction?: boolean;
+  eliminationTime?: number; // Timestamp when player was eliminated
 }
 
 // Question related interfaces

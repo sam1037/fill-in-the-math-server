@@ -24,7 +24,7 @@ export const createRoom = (
     isPublic?: boolean;
   }
 ) => {
-  const roomId = Math.random().toString(36).substring(2, 9);
+  const roomId = Math.floor(100000 + Math.random() * 900000).toString();
   const player: Player = {
     id: socketId,
     username,
@@ -242,11 +242,12 @@ export const continueGame = (socketId: string, roomId: string) => {
     // Room must be in FINISHED state to continue
     if (room.status !== RoomStatus.FINISHED) return 'INVALID_STATE';
 
-    // Reset player health and scores for a new game
+    // Reset player health, scores, and elimination tracking for a new game
     room.players.forEach((player) => {
       player.health = 0;
       player.score = 0;
       player.currentQuestionIndex = 0;
+      player.eliminationTime = undefined; // Clear elimination time tracking
     });
 
     // Set the room status back to WAITING

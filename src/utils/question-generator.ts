@@ -38,6 +38,7 @@ function generate_number(
 ) {
   // Generate numbers to use in the equation
   const numbers: number[] = [];
+  const MAX_DUPLICATE_ATTEMPTS = 10; // Add maximum attempts limit
 
   for (let i = 0; i < numOperations + 1; i++) {
     // Ensure division operations result in whole numbers
@@ -61,17 +62,39 @@ function generate_number(
     } else {
       new_number = randint(1, 9);
     }
-    // if contain duplicate, regenerate a number
-    const contain_duplicate = numbers.includes(new_number);
-    if (contain_duplicate) {
-      i--;
+
+    // if contain duplicate, regenerate a number with a limit
+    let duplicate_attempts = 0;
+    while (
+      numbers.includes(new_number) &&
+      duplicate_attempts < MAX_DUPLICATE_ATTEMPTS
+    ) {
+      new_number = randint(1, 9);
+      duplicate_attempts++;
+    }
+
+    // Skip this position if we can't find a non-duplicate after max attempts
+    if (numbers.includes(new_number)) {
       continue;
     }
+
     numbers.push(new_number);
   }
+
+  // Ensure we have enough numbers, fill with unique values if needed
+  while (numbers.length < numOperations + 1) {
+    for (let n = 1; n <= 9; n++) {
+      if (!numbers.includes(n)) {
+        numbers.push(n);
+        break;
+      }
+    }
+  }
+
   const output: [number[], MathSymbol[]] = [numbers, selectedOperators];
   return output;
 }
+
 /**
  * generate math question randomly given difficulty
  *
@@ -101,10 +124,9 @@ export function generateQuestion(difficulty: Difficulty): Question {
   for (let i = 0; i < numOperations; i++) {
     let randomIndex = randint(operators.length - 1);
 
-    const include_mul_div = selectedOperators.includes(
-      // eslint-disable-next-line  @typescript-eslint/no-unnecessary-condition
-      MathSymbol.Multiplication || MathSymbol.Division
-    );
+    const include_mul_div =
+      selectedOperators.includes(MathSymbol.Multiplication) ||
+      selectedOperators.includes(MathSymbol.Division);
     if (include_mul_div) {
       randomIndex = randint(0, 1);
       // if there is mul/div -> remaining operator will be add/subtraction
@@ -132,20 +154,33 @@ export function generateQuestion(difficulty: Difficulty): Question {
 
   // Regenerate questions if
   // 1. Numbers contain numbers other than number in [1, 9]
+  // 2. Result is not an integer
   let contain_pos_1_digit_only = numbers.every((el) => el >= 1 && el <= 9);
   let contain_integer_only = numbers.every((el) => Number.isInteger(el));
-  // TODO: modify here: disallow case where result >= 10
+
+  // Add a limit to prevent infinite loops
+  let attempts = 0;
+  const MAX_ATTEMPTS = 3;
+
   while (
-    !Number.isInteger(result) ||
-    !contain_pos_1_digit_only ||
-    !contain_integer_only
+    (!Number.isInteger(result) ||
+      !contain_pos_1_digit_only ||
+      !contain_integer_only) &&
+    attempts < MAX_ATTEMPTS
   ) {
+    attempts++;
     generation_result = generate_number(selectedOperators, numOperations);
     numbers = generation_result[0];
     selectedOperators = generation_result[1];
     result = calculate_result(numbers, selectedOperators);
-    contain_pos_1_digit_only = numbers.every((el) => el >= 1 && el <= 9);
-    contain_integer_only = numbers.every((el) => Number.isInteger(el));
+  }
+
+  // If we couldn't generate valid numbers after max attempts, create a simpler equation
+  if (attempts >= MAX_ATTEMPTS) {
+    // Fall back to a simple addition equation that always works
+    selectedOperators = [MathSymbol.Addition];
+    numbers = [3, 5];
+    result = 8;
   }
 
   const include_mul_div: boolean =
