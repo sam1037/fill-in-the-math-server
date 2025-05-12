@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx --watch --env-file .env src/index.ts",
-    "start": "node --env-file .env dist/src/index.js",
+    "start": "node dist/src/index.js",
     "start:optimized": "./scripts/start-optimized.sh",
     "start:gc": "node --expose-gc --max-old-space-size=2048 --env-file .env dist/src/index.js",
     "lint": "eslint",
