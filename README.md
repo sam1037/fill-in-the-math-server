@@ -37,6 +37,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## How to play?
 
+<img width="1680" alt="Screenshot 2025-05-12 at 12 33 54" src="https://github.com/user-attachments/assets/beb23412-d88f-456f-a615-b57641dbc365" />
 **Joining a game**  
 Upon being greeted by the lobby, you can choose to either "Quick Join", "Host Game", or "Join Game". The first option
 is the quickest way to hop into a random game, the second and third option is for playing with friends, where you can
@@ -63,6 +64,11 @@ Good Luck, Have Fun!
 ## 📄 License
 
 This project is licensed under the [MIT License](https://github.com/listenrwt/fill-in-the-math-server/blob/master/LICENSE)
+
+## Admin
+You can monitor the server resources through admin page.
+<img width="1680" alt="Screenshot 2025-05-12 at 12 38 22" src="https://github.com/user-attachments/assets/40ab1f9e-8f21-4c88-8383-c42c596d204d" />
+
 
 ## Credits
 Sam [github](https://github.com/sam1037)  
